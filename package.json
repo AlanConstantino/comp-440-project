@@ -1,0 +1,25 @@
+{
+  "name": "comp-440-project",
+  "version": "1.0.0",
+  "description": "Project 1 for COMP 440 Database Design.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlanConstantino/comp-440-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlanConstantino/comp-440-project/issues"
+  },
+  "homepage": "https://github.com/AlanConstantino/comp-440-project#readme",
+  "dependencies": {
+    "express": "^4.17.3",
+    "nodemon": "^2.0.15"
+  }
+}
