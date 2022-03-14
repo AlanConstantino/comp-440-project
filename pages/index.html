@@ -11,15 +11,15 @@
     <!-- landing page (i.e. login) -->
     <center><h1>Login</h1></center>
 
-    <form>
+    <form action="/welcome" method="POST">
 
       <div class="container">
         <label>Username: </label>
-        <input type="text" placeholder="Enter Username" name="username" required>
+        <input type="text" placeholder="Enter Username" id="username" name="username" required>
         <label>Password: </label>
-        <input type="password" placeholder="Enter Password" name="password" required><br>
-        <p><button type="submit">Login</button></p>
-        <p><a href="register.html">Register</a></p>
+        <input type="password" placeholder="Enter Password" id="password" name="password" required><br>
+        <button type="submit">Login</button>
+        <a href="/register">Register</a>
       </div>
 
     </form>

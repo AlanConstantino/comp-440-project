@@ -16,8 +16,40 @@
 
       Other than that this page is just blank (can maybe show user name and email alongisde a logout button).
      -->
-
-     <center><button type="button">Initialize Database</button></center>
+     <center><div id="message"></div></center>
+     <center><button id="button" type="button">Initialize Database</button></center>
+     <center><button id="logout" type="button">Logout</button></center>
 
   </body>
+  <script>
+    const button = document.getElementById('button');
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const options = {
+        method: 'POST',
+      };
+
+      fetch('/initialize', options)
+        .then(response => response.json())
+        .then(data => {
+          const message = document.getElementById('message');
+          console.log(data.message);
+          message.textContent = data.message;
+        });
+    });
+
+    const logoutButton = document.getElementById('logout');
+    logoutButton.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const options = {
+        method: 'POST'
+      }
+      fetch('/logout', options)
+        .then(response => console.log(response));
+      
+      window.location.href = '/';
+    });
+  </script>
 </html>
