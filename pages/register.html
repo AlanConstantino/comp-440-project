@@ -4,10 +4,30 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css">
     <title>Register</title>
   </head>
   <body>
     <!-- Aquire user data to register in database -->
-    <h1>Register</h1>
+    <center><h1>Register</h1></center>
+
+    <form>
+
+      <div class="container">
+        <label>Username: </label>
+        <input type="text" placeholder="Enter Username" name="regUsername" required>
+        <label>Password: </label>
+        <input type="password" placeholder="Enter Password" name="regPassword" required><br>
+        <label>First Name: </label>
+        <input type="text" placeholder="Enter First Name" name="regFirstName" required>
+        <label>Last Name: </label>
+        <input type="text" placeholder="Enter Last Name" name="regLastName" required><br>
+        <label>Email </label>
+        <input type="text" placeholder="Enter Email" name="regEmail" required><br>
+        <p><button type="submit">Register</button></p>
+      </div>
+
+    </form>
+
   </body>
 </html>
