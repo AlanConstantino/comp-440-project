@@ -8,6 +8,7 @@ const app = express();
 const path = require('path');
 const port = 3000;
 const bodyParser = require('body-parser'); // parses body of http request
+const INITIALIZE_DATA_FILE = 'schema.sql';
 
 // for parsing body of requests
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -132,6 +133,9 @@ app.post('/register', (req, res) => {
 app.post('/initialize', (req, res) => {
     // sql file execution code taken from here:
     // https://www.npmjs.com/package/run-my-sql-file
+
+    // initialize database with new schema from phase 2
+
     runner.connectionOptions({
         host: '127.0.0.1',
         user: 'user',
@@ -139,13 +143,13 @@ app.post('/initialize', (req, res) => {
         port: '3306'
     });
 
-    const sqlFile = __dirname + '/sql/university.sql';
+    const sqlFile = __dirname + `/sql/${INITIALIZE_DATA_FILE}`;
+    console.log(sqlFile);
     runner.runFile(sqlFile, (error) => {
         if (error) {
             res.status(400).send({error: error});
         }
-
-        res.status(200).send({message: 'Successfully executed the university.sql file!'});
+        res.status(200).send({message: `Successfully executed the ${INITIALIZE_DATA_FILE} file!`});
     });
 });
 
