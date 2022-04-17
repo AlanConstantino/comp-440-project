@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css">
+    <title>Welcome</title>
+  </head>
+  <body>
+    <center><h1>Welcome</h1></center>
+    <!-- What user sees when they login -->
+    <!--
+      This page must contain a "Initialize Database" button when once clicked, it sends a post
+      request to the backend to populate the database with dummy data provided by the professor.
+
+      Other than that this page is just blank (can maybe show user name and email alongisde a logout button).
+     -->
+     <center><div id="message"></div></center>
+     <center><button id="button" type="button">Initialize Database</button></center>
+     <center><button id="logout" type="button">Logout</button></center>
+
+  </body>
+  <script>
+    const button = document.getElementById('button');
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const options = {
+        method: 'POST',
+      };
+
+      fetch('/initialize', options)
+        .then(response => response.json())
+        .then(data => {
+          const message = document.getElementById('message');
+          console.log(data.message);
+          message.textContent = data.message;
+        });
+    });
+
+    const logoutButton = document.getElementById('logout');
+    logoutButton.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      const options = {
+        method: 'POST'
+      }
+      fetch('/logout', options)
+        .then(response => console.log(response));
+      
+      window.location.href = '/';
+    });
+  </script>
+</html>
