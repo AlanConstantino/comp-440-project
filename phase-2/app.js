@@ -68,8 +68,94 @@ app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/register.html'));
 });
 
+// register page
+app.get('/create-post', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages/create-post.html'));
+});
+
+// handling user login
+app.post('/create-post', (req, res) => {
+    if (!req.body.username) {
+        res.status(400).send({error: 'User is not logged in!'});
+        return;
+    }
+
+    if (!req.body.subject || !req.body.description || !req.body.tags) {
+        res.status(400).send({error: 'Blog fields were left empty.'});
+        return;
+    }
+
+    // SQL statement to find the id of the user
+    const selectSql = 'SELECT idUser FROM user WHERE username = ?';
+    database.query(selectSql, req.body.username, (error, data) => {
+        if (error) {
+            console.log(error);
+            res.status(400).send({error: `SQL ERROR: ${error}`});
+            return;
+        }
+
+        const userId = data[0].idUser;
+
+        // SQL statement to insert the blog into the 'blog' table alongside the user id
+        // we queried earlier
+        const insertSql = 'INSERT INTO blog (idUser, subject, description, date) VALUES (?, ?, ?, CURDATE())';
+        const insertValues = [userId, req.body.subject, req.body.description];
+        database.query(insertSql, insertValues, (error, data) => {
+            if (error) {
+                console.log(error);
+                res.status(400).send({error: `SQL ERROR: ${error}`});
+                return;
+            }
+
+            const blogId = data.insertId;
+            const insertTagValues = req.body.tags;
+
+            insertTagValues.forEach((tag) => {
+                const values = [tag, blogId];
+
+                // SQL statement to link the blog's id to the tags associated with the blog
+                const insertTagSql = 'INSERT INTO tag (tagName, idBlog) VALUES (?, ?)';
+                database.query(insertTagSql, values, (error, data) => {
+                    if (error) {
+                        console.log(error);
+                        res.status(400).send({error: `SQL ERROR: ${error}`});
+                        return;
+                    }
+            
+                });
+            });
+        });
+        res.status(200).send({status: 'success', message: 'Successfully inserted blog into database!'});
+    });
+
+    // fix later to use callbacks (like below) instead of nested async calls (like above)
+    
+    // const getUserId = (req, cb) => {
+    //     const selectSql = 'SELECT idUser FROM user WHERE username = ?';
+    //     database.query(selectSql, req.body.username, (error, data) => {
+    //         if (error) {
+    //             console.log(error);
+    //             res.status(400).send({error: `SQL ERROR: ${error}`});
+    //             return;
+    //         }
+    
+    //         return cb(data[0].idUser);
+    //     });
+    // };
+
+    // let uid = null;
+    // getUserId(req, (result) => {
+    //     uid = result;
+    //     console.log(uid);
+    //     // rest of code goes here
+    // });
+    // console.log(uid);
+});
+
 // handling user login
 app.post('/welcome', (req, res) => {
+    console.log('HERE');
+    console.log(req.body);
     const sql = 'SELECT * FROM user WHERE username = ?';
     database.query(sql, req.body.username, (error, userData) => {
         if (error) {
