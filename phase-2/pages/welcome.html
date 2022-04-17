@@ -17,13 +17,14 @@
       Other than that this page is just blank (can maybe show user name and email alongisde a logout button).
      -->
      <center><div id="message"></div></center>
-     <center><button id="button" type="button">Initialize Database</button></center>
+     <center><a href="./create-post">Create Post</a></center>
+     <center><button id="initialize" type="button">Initialize Database</button></center>
      <center><button id="logout" type="button">Logout</button></center>
 
   </body>
   <script>
-    const button = document.getElementById('button');
-    button.addEventListener('click', (e) => {
+    const initializeButton = document.getElementById('initialize');
+    initializeButton.addEventListener('click', (e) => {
       e.preventDefault();
 
       const options = {
