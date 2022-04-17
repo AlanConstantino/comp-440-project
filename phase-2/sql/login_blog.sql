@@ -16,32 +16,38 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `user`
+-- Table structure for table `blog`
 --
 
-DROP TABLE IF EXISTS `user`;
+DROP TABLE IF EXISTS `blog`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `user` (
-  `idUser` int NOT NULL AUTO_INCREMENT,
-  `username` varchar(45) NOT NULL,
-  `password` varchar(45) NOT NULL,
-  `firstName` varchar(45) NOT NULL,
-  `lastName` varchar(45) NOT NULL,
-  `email` varchar(45) NOT NULL,
-  PRIMARY KEY (`idUser`),
-  UNIQUE KEY `email_UNIQUE` (`email`),
-  UNIQUE KEY `userID_UNIQUE` (`idUser`)
+CREATE TABLE `blog` (
+  `idBlog` int NOT NULL AUTO_INCREMENT,
+  `idUser` int NOT NULL,
+  `idComment` int NOT NULL,
+  `idTag` int NOT NULL,
+  `subject` varchar(45) NOT NULL,
+  `description` varchar(45) NOT NULL,
+  `date` datetime NOT NULL,
+  PRIMARY KEY (`idBlog`),
+  UNIQUE KEY `idBlog_UNIQUE` (`idBlog`),
+  KEY `fk_idUser_idx` (`idUser`),
+  KEY `fk_idComment_idx` (`idComment`),
+  KEY `fk_idTag_idx` (`idTag`),
+  CONSTRAINT `fk_idComment` FOREIGN KEY (`idComment`) REFERENCES `comment` (`idComment`),
+  CONSTRAINT `fk_idTag` FOREIGN KEY (`idTag`) REFERENCES `tag` (`idtag`),
+  CONSTRAINT `fk_idUser` FOREIGN KEY (`idUser`) REFERENCES `user` (`idUser`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `user`
+-- Dumping data for table `blog`
 --
 
-LOCK TABLES `user` WRITE;
-/*!40000 ALTER TABLE `user` DISABLE KEYS */;
-/*!40000 ALTER TABLE `user` ENABLE KEYS */;
+LOCK TABLES `blog` WRITE;
+/*!40000 ALTER TABLE `blog` DISABLE KEYS */;
+/*!40000 ALTER TABLE `blog` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
