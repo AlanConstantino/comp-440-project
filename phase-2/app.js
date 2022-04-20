@@ -78,6 +78,25 @@ app.get('/create-comment/:idUser/:idBlog', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/create-comment.html'));
 });
 
+// returns all comments of a particular blog from its blog id
+app.post('/comments/:idBlog', (req, res) => {
+    if (!req.params.idBlog) {
+        res.status(400).send({error: 'Error: No ID passed in.'});
+        return;
+    }
+
+    const allCommentsOfBlog = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idComment DESC';
+    database.query(allCommentsOfBlog, req.params.idBlog, (error, data) => {
+        if (error) {
+            console.log(error);
+            res.status(400).send({error: `SQL ERROR: ${error}`});
+            return;
+        }
+
+        res.status(200).send({status: 'success', data})
+    });
+});
+
 // returns all the posts of all time
 app.post('/posts', (req, res) => {
     const allPosts = 'SELECT * FROM blog ORDER BY idBlog DESC';
