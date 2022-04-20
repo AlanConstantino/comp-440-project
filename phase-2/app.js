@@ -75,7 +75,7 @@ app.get('/create-post', (req, res) => {
 
 // returns all the posts of all time
 app.post('/posts', (req, res) => {
-    const allPosts = 'SELECT * FROM blog';
+    const allPosts = 'SELECT * FROM blog ORDER BY idBlog DESC';
     database.query(allPosts, (error, data) => {
         if (error) {
             console.log(error);
