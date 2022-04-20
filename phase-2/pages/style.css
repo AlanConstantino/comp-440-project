@@ -24,3 +24,14 @@ input[type=text],input[type=password] {
 .container {
     padding: 25px;
 }
+#comment-box{
+    border: none;
+    border-radius: 5px;
+    width: 50%;
+}
+#post{
+    border: none;
+}
+#post:hover{
+    background-color: rgb(255, 95, 95);
+}
