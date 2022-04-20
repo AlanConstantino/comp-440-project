@@ -73,6 +73,11 @@ app.get('/create-post', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/create-post.html'));
 });
 
+// create a comment page
+app.get('/create-comment/:idUser/:idBlog', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages/create-comment.html'));
+});
+
 // returns all the posts of all time
 app.post('/posts', (req, res) => {
     const allPosts = 'SELECT * FROM blog ORDER BY idBlog DESC';
