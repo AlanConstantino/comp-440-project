@@ -41,6 +41,9 @@
           const description = document.createElement('p');
           const date = document.createElement('p');
           const user = document.createElement('p');
+          const createCommentLink = document.createElement('a');
+          createCommentLink.innerText = 'Comment on this post';
+          createCommentLink.href = `./create-comment/${item.idUser}/${item.idBlog}`;
 
         // fetch request to get data about user (i.e. their id and username)
         fetch(`/user/${item.idUser}`, {method: 'POST'})
@@ -55,6 +58,7 @@
           postsContainer.appendChild(description);
           postsContainer.appendChild(date);
           postsContainer.appendChild(user);
+          postsContainer.appendChild(createCommentLink);
           postsContainer.appendChild(document.createElement('hr'));
         });
       });
