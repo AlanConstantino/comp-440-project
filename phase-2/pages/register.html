@@ -15,7 +15,7 @@
 
       <div class="container">
         <label>Username: </label>
-        <input type="text" placeholder="Enter Username" name="username" required>
+        <input id="username" type="text" placeholder="Enter Username" name="username" required>
         <label>Password: </label>
         <input type="password" placeholder="Enter Password" name="password" required><br>
         <label>Confirm Password: </label>
@@ -26,10 +26,18 @@
         <input type="text" placeholder="Enter Last Name" name="lastName" required><br>
         <label>Email </label>
         <input type="email" placeholder="Enter Email" name="email" required><br>
-        <p><button type="submit">Register</button></p>
+        <p><button id="register" type="submit">Register</button></p>
       </div>
 
     </form>
 
+    <script>
+      window.sessionStorage.clear();
+      const registerButton = document.getElementById('register');
+      registerButton.addEventListener('click', (e) => {
+        const username = document.getElementById('username').value;
+        window.sessionStorage.setItem('username', username);
+      });
+    </script>
   </body>
 </html>
