@@ -37,7 +37,16 @@
         const postsContainer = document.getElementById('posts-container');
 
         data.data.forEach((item) => {
+          // for comment
+          const commentContainer = document.createElement('div');
+          const commentTitle = document.createElement('h4');
+          commentTitle.innerText = 'Comments';
+          const comment = document.createElement('p');
+          const usernameOfComment = document.createElement('p');
+          
+          // for post
           const subject = document.createElement('h3');
+          const rate = document.createElement('p');
           const description = document.createElement('p');
           const date = document.createElement('p');
           const user = document.createElement('p');
@@ -53,11 +62,32 @@
           subject.innerText = 'Subject: ' + item.subject;
           description.innerText = 'Description: ' + item.description;
           date.innerText = 'Date: ' + item.date;
+          rate.innerText = 'Rate: ' + item.rate;
+
+          fetch(`/comments/${item.idBlog}`, {method: 'POST'})
+            .then(response => response.json())
+            .then(res => {
+              comment.innerText = 'Comment: ' + res.data[0].description;
+              fetch(`/user/${res.data[0].idUser}`, {method: 'POST'})
+                .then(response => response.json())
+                .then(res => {
+                  console.log(res.data[0].username);
+                  usernameOfComment.innerHTML = `<i>Comment by</i> <b>${res.data[0].username}</b>`;
+                });
+            });
           
+          // for comment
+          commentContainer.appendChild(comment);
+          commentContainer.appendChild(usernameOfComment);
+
+          // for post
           postsContainer.appendChild(subject);
           postsContainer.appendChild(description);
+          postsContainer.appendChild(rate);
           postsContainer.appendChild(date);
           postsContainer.appendChild(user);
+          postsContainer.appendChild(commentTitle);
+          postsContainer.appendChild(commentContainer);
           postsContainer.appendChild(createCommentLink);
           postsContainer.appendChild(document.createElement('hr'));
         });
