@@ -79,14 +79,14 @@ app.get('/create-comment/:idUser/:idBlog', (req, res) => {
 });
 
 // add the comment to the database
-app.post('insert-comment/:idBlog/:idUser', (req, res) => {
+app.post('/insert-comment/:idBlog/:idUser', (req, res) => {
     if (!req.params.idBlog || !req.params.idUser || !req.body.description) {
         res.status(400).send({error: 'Error: ID blog, ID user, or description are empty.'});
         return;
     }
 
     const insertSql = 'INSERT INTO comment (idUser, description, idBlog, date) VALUES (?, ?, ?, CURDATE())';
-    database.query(insertSql, req.params.idBlog, req.params.idUser, req.body.description, (error, data) => {
+    database.query(insertSql, req.params.idUser, req.body.description, req.params.idBlog, (error, data) => {
         if (error) {
             console.log(error);
             res.status(400).send({error: `SQL ERROR: ${error}`});
