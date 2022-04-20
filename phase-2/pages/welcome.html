@@ -20,9 +20,46 @@
      <center><a href="./create-post">Create Post</a></center>
      <center><button id="initialize" type="button">Initialize Database</button></center>
      <center><button id="logout" type="button">Logout</button></center>
+     <center><div id="messages"></div></center>
+     <center>
+       <hr>
+       <h1>All Posts</h1>
+       <hr>
+      <div id="posts-container"></div>
+    </center>
 
   </body>
   <script>
+    // populates the 'posts-container' div
+    fetch('/posts', {method: 'POST'})
+      .then((response) => response.json())
+      .then((data) => {
+        const postsContainer = document.getElementById('posts-container');
+
+        data.data.forEach((item) => {
+          const subject = document.createElement('h3');
+          const description = document.createElement('p');
+          const date = document.createElement('p');
+          const user = document.createElement('p');
+
+        // fetch request to get data about user (i.e. their id and username)
+        fetch(`/user/${item.idUser}`, {method: 'POST'})
+          .then(response => response.json())
+          .then(res => user.innerText = 'by ' + res.data[0].username);
+  
+          subject.innerText = 'Subject: ' + item.subject;
+          description.innerText = 'Description: ' + item.description;
+          date.innerText = 'Date: ' + item.date;
+          
+          postsContainer.appendChild(subject);
+          postsContainer.appendChild(description);
+          postsContainer.appendChild(date);
+          postsContainer.appendChild(user);
+          postsContainer.appendChild(document.createElement('hr'));
+        });
+      });
+
+    // initialize button functionality
     const initializeButton = document.getElementById('initialize');
     initializeButton.addEventListener('click', (e) => {
       e.preventDefault();
@@ -40,6 +77,7 @@
         });
     });
 
+    // logout button functionality
     const logoutButton = document.getElementById('logout');
     logoutButton.addEventListener('click', (e) => {
       e.preventDefault();
