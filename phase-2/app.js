@@ -279,3 +279,4 @@ app.post('/logout', (req, res) => {
 app.listen(port, () => {
     console.log(`Server started on port ${port}.\nGo to localhost:${port} to view webpage.`)
 });
+
