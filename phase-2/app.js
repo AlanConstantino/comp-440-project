@@ -8,7 +8,7 @@ const app = express();
 const path = require('path');
 const port = 3000;
 const bodyParser = require('body-parser'); // parses body of http request
-const INITIALIZE_DATA_FILE = 'schema.sql';
+const INITIALIZE_DATA_FILE = 'schema-and-data.sql';
 
 // for parsing body of requests
 app.use(bodyParser.urlencoded({ extended: false }));
