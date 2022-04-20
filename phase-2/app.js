@@ -73,6 +73,39 @@ app.get('/create-post', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/create-post.html'));
 });
 
+// returns all the posts of all time
+app.post('/posts', (req, res) => {
+    const allPosts = 'SELECT * FROM blog';
+    database.query(allPosts, (error, data) => {
+        if (error) {
+            console.log(error);
+            res.status(400).send({error: `SQL ERROR: ${error}`});
+            return;
+        }
+
+        res.status(200).send({status: 'success', data})
+    });
+});
+
+// returns data about a specific user from their id
+app.post('/user/:id', (req, res) => {
+    if (!req.params.id) {
+        res.status(400).send({error: 'Error: No ID passed in.'});
+        return;
+    }
+
+    const userData = 'SELECT idUser, username FROM user WHERE user.idUser = ?';
+    database.query(userData, req.params.id, (error, data) => {
+        if (error) {
+            console.log(error);
+            res.status(400).send({error: `SQL ERROR: ${error}`});
+            return;
+        }
+
+        res.status(200).send({status: 'success', data})
+    });
+});
+
 // handling user login
 app.post('/create-post', (req, res) => {
     if (!req.body.username) {
