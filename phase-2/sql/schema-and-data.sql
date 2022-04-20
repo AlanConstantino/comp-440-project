@@ -18,22 +18,20 @@
 --
 -- Table structure for table `blog`
 --
-use `comp440`;
+
 DROP TABLE IF EXISTS `blog`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `blog` (
   `idBlog` int NOT NULL AUTO_INCREMENT,
   `idUser` int NOT NULL,
-  `idComment` int DEFAULT NULL,
   `subject` varchar(45) NOT NULL,
   `description` varchar(45) NOT NULL,
   `date` datetime NOT NULL,
+  `rate` bigint NOT NULL,
   PRIMARY KEY (`idBlog`),
   UNIQUE KEY `idBlog_UNIQUE` (`idBlog`),
   KEY `fk_idUser_idx` (`idUser`),
-  KEY `fk_idComment_idx` (`idComment`),
-  CONSTRAINT `fk_idComment` FOREIGN KEY (`idComment`) REFERENCES `comment` (`idComment`),
   CONSTRAINT `fk_idUser` FOREIGN KEY (`idUser`) REFERENCES `user` (`idUser`)
 ) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -44,7 +42,7 @@ CREATE TABLE `blog` (
 
 LOCK TABLES `blog` WRITE;
 /*!40000 ALTER TABLE `blog` DISABLE KEYS */;
-INSERT INTO `blog` VALUES (1,1,NULL,'a','s','2022-04-17 00:00:00'),(2,1,NULL,'a','s','2022-04-17 00:00:00'),(3,1,NULL,'a','s','2022-04-17 00:00:00'),(4,1,NULL,'a','s','2022-04-17 00:00:00'),(5,1,NULL,'a','s','2022-04-17 00:00:00'),(6,1,NULL,'a','s','2022-04-17 00:00:00'),(7,1,NULL,'a','s','2022-04-17 00:00:00'),(8,1,NULL,'a','s','2022-04-17 00:00:00'),(9,1,NULL,'a','s','2022-04-17 00:00:00'),(10,1,NULL,'a','s','2022-04-17 00:00:00'),(11,1,NULL,'a','s','2022-04-17 00:00:00'),(12,1,NULL,'a','s','2022-04-17 00:00:00'),(13,1,NULL,'a','s','2022-04-17 00:00:00'),(14,1,NULL,'a','s','2022-04-17 00:00:00'),(15,1,NULL,'a','s','2022-04-17 00:00:00'),(16,1,NULL,'a','s','2022-04-17 00:00:00'),(17,1,NULL,'a','s','2022-04-17 00:00:00'),(18,1,NULL,'ss','ggsa','2022-04-17 00:00:00'),(19,1,NULL,'ssffwwfgaw','12345','2022-04-17 00:00:00'),(20,1,NULL,'ssss','ssss','2022-04-18 00:00:00'),(21,3,NULL,'My Subject','This is my description','2022-04-20 00:00:00');
+INSERT INTO `blog` VALUES (1,1,'a','s','2022-04-17 00:00:00',0),(2,1,'a','s','2022-04-17 00:00:00',0),(3,1,'a','s','2022-04-17 00:00:00',0),(4,1,'a','s','2022-04-17 00:00:00',0),(5,1,'a','s','2022-04-17 00:00:00',0),(6,1,'a','s','2022-04-17 00:00:00',0),(7,1,'a','s','2022-04-17 00:00:00',0),(8,1,'a','s','2022-04-17 00:00:00',0),(9,1,'a','s','2022-04-17 00:00:00',0),(10,1,'a','s','2022-04-17 00:00:00',0),(11,1,'a','s','2022-04-17 00:00:00',0),(12,1,'a','s','2022-04-17 00:00:00',0),(13,1,'a','s','2022-04-17 00:00:00',0),(14,1,'a','s','2022-04-17 00:00:00',0),(15,1,'a','s','2022-04-17 00:00:00',0),(16,1,'a','s','2022-04-17 00:00:00',0),(17,1,'a','s','2022-04-17 00:00:00',0),(18,1,'ss','ggsa','2022-04-17 00:00:00',0),(19,1,'ssffwwfgaw','12345','2022-04-17 00:00:00',0),(20,1,'ssss','ssss','2022-04-18 00:00:00',0),(21,3,'My Subject','This is my description','2022-04-20 00:00:00',0);
 /*!40000 ALTER TABLE `blog` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -60,12 +58,14 @@ CREATE TABLE `comment` (
   `idUser` int NOT NULL,
   `date` datetime NOT NULL,
   `description` varchar(100) NOT NULL,
-  `rate` int NOT NULL,
+  `idBlog` int NOT NULL,
   PRIMARY KEY (`idComment`),
   UNIQUE KEY `idcomment_UNIQUE` (`idComment`),
   KEY `fk_userID_idx` (`idUser`),
+  KEY `fk_blogID_idx` (`idBlog`),
+  CONSTRAINT `fk_blogID` FOREIGN KEY (`idBlog`) REFERENCES `blog` (`idBlog`),
   CONSTRAINT `fk_userID` FOREIGN KEY (`idUser`) REFERENCES `user` (`idUser`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,6 +74,7 @@ CREATE TABLE `comment` (
 
 LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
+INSERT INTO `comment` VALUES (1,1,'2022-04-17 00:00:00','This is my description',1);
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -144,4 +145,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-04-20 13:55:42
+-- Dump completed on 2022-04-20 15:45:20
