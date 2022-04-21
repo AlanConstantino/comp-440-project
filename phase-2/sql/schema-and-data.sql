@@ -42,7 +42,7 @@ CREATE TABLE `blog` (
 
 LOCK TABLES `blog` WRITE;
 /*!40000 ALTER TABLE `blog` DISABLE KEYS */;
-INSERT INTO `blog` VALUES (1,1,'a','s','2022-04-17 00:00:00',0),(2,1,'a','s','2022-04-17 00:00:00',0),(3,1,'a','s','2022-04-17 00:00:00',0),(4,1,'a','s','2022-04-17 00:00:00',0),(5,1,'a','s','2022-04-17 00:00:00',0),(6,1,'a','s','2022-04-17 00:00:00',0),(7,1,'a','s','2022-04-17 00:00:00',0),(8,1,'a','s','2022-04-17 00:00:00',0),(9,1,'a','s','2022-04-17 00:00:00',0),(10,1,'a','s','2022-04-17 00:00:00',0),(11,1,'a','s','2022-04-17 00:00:00',0),(12,1,'a','s','2022-04-17 00:00:00',0),(13,1,'a','s','2022-04-17 00:00:00',0),(14,1,'a','s','2022-04-17 00:00:00',0),(15,1,'a','s','2022-04-17 00:00:00',0),(16,1,'a','s','2022-04-17 00:00:00',0),(17,1,'a','s','2022-04-17 00:00:00',0),(18,1,'ss','ggsa','2022-04-17 00:00:00',0),(19,1,'ssffwwfgaw','12345','2022-04-17 00:00:00',0),(20,1,'ssss','ssss','2022-04-18 00:00:00',0),(21,3,'My Subject','This is my description','2022-04-20 00:00:00',0);
+INSERT INTO `blog` VALUES (1,1,'a','s','2022-04-17 00:00:00',0),(2,1,'a','s','2022-04-17 00:00:00',0),(3,1,'a','s','2022-04-17 00:00:00',0),(4,1,'a','s','2022-04-17 00:00:00',0),(5,1,'a','s','2022-04-17 00:00:00',0),(6,1,'a','s','2022-04-17 00:00:00',0),(7,1,'a','s','2022-04-17 00:00:00',0),(8,1,'a','s','2022-04-17 00:00:00',0),(9,1,'a','s','2022-04-17 00:00:00',0),(10,1,'a','s','2022-04-17 00:00:00',0),(11,1,'a','s','2022-04-17 00:00:00',0),(12,1,'a','s','2022-04-17 00:00:00',0),(13,1,'a','s','2022-04-17 00:00:00',0),(14,1,'a','s','2022-04-17 00:00:00',0),(15,1,'a','s','2022-04-17 00:00:00',0),(16,1,'a','s','2022-04-17 00:00:00',0),(17,1,'a','s','2022-04-17 00:00:00',0),(18,1,'ss','ggsa','2022-04-17 00:00:00',0),(19,1,'ssffwwfgaw','12345','2022-04-17 00:00:00',-1),(20,1,'ssss','ssss','2022-04-18 00:00:00',2),(21,3,'My Subject','This is my description','2022-04-20 00:00:00',16);
 /*!40000 ALTER TABLE `blog` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -65,7 +65,7 @@ CREATE TABLE `comment` (
   KEY `fk_blogID_idx` (`idBlog`),
   CONSTRAINT `fk_blogID` FOREIGN KEY (`idBlog`) REFERENCES `blog` (`idBlog`),
   CONSTRAINT `fk_userID` FOREIGN KEY (`idUser`) REFERENCES `user` (`idUser`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -74,7 +74,7 @@ CREATE TABLE `comment` (
 
 LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
-INSERT INTO `comment` VALUES (1,1,'2022-04-17 00:00:00','This is my description',1);
+INSERT INTO `comment` VALUES (1,1,'2022-04-17 00:00:00','This is my description',1),(2,1,'2022-04-20 00:00:00','ssf',21),(3,1,'2022-04-20 00:00:00','ff',21),(4,1,'2022-04-20 00:00:00','ff',21),(5,1,'2022-04-20 00:00:00','This is my comment that is totally important!',20),(6,1,'2022-04-20 00:00:00','fffffaaa',19),(7,1,'2022-04-20 00:00:00','sss',19),(8,1,'2022-04-20 00:00:00','sss',19),(9,1,'2022-04-20 00:00:00','sss',19),(10,1,'2022-04-20 00:00:00','This is another comment!',21),(11,1,'2022-04-20 00:00:00','sss',21),(12,1,'2022-04-20 00:00:00','hhh',21),(13,1,'2022-04-20 00:00:00','hhh',21),(14,1,'2022-04-20 00:00:00','hhh',21),(15,1,'2022-04-20 00:00:00','hhh',21),(16,1,'2022-04-20 00:00:00','hhh',21),(17,1,'2022-04-20 00:00:00','hhh',21),(18,1,'2022-04-20 00:00:00','hhh',21),(19,1,'2022-04-20 00:00:00','hhh',21),(20,3,'2022-04-20 00:00:00','This is my awesome comment!',20);
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -122,7 +122,8 @@ CREATE TABLE `user` (
   `email` varchar(45) NOT NULL,
   PRIMARY KEY (`idUser`),
   UNIQUE KEY `email_UNIQUE` (`email`),
-  UNIQUE KEY `userID_UNIQUE` (`idUser`)
+  UNIQUE KEY `userID_UNIQUE` (`idUser`),
+  UNIQUE KEY `username_UNIQUE` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -145,4 +146,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-04-20 15:45:20
+-- Dump completed on 2022-04-20 20:05:46
