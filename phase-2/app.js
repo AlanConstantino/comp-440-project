@@ -16,6 +16,7 @@ app.use(bodyParser.json());
 
 // mysql database connection
 const mysql = require('mysql');
+const { query } = require('express');
 const database = mysql.createConnection({
     host: '127.0.0.1',
     user: 'user',
@@ -74,30 +75,117 @@ app.get('/create-post', (req, res) => {
 });
 
 // create a comment page
-app.get('/create-comment/:idUser/:idBlog', (req, res) => {
+app.get('/create-comment/:idBlog', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/create-comment.html'));
 });
 
-// add the comment to the database
-app.post('/insert-comment/:idBlog/:idUser', (req, res) => {
-
-    console.log(req.params);
-
-    /*if (!req.params.idBlog || !req.params.idUser || !req.body.description) {
-        res.status(400).send({error: 'Error: ID blog, ID user, or description are empty.'});
+// return the rating of the blog based on the blog's id
+app.get('/rating/:idBlog', (req, res) => {
+    if (!req.params.idBlog) {
+        res.status(400).send({error: 'Error: No blog id passed as a body parameter.'});
         return;
     }
 
-    const insertSql = 'INSERT INTO comment (idUser, description, idBlog, date) VALUES (?, ?, ?, CURDATE())';
-    database.query(insertSql, req.params.idUser, req.body.description, req.params.idBlog, (error, data) => {
+    const getRating = 'SELECT rate FROM blog WHERE idBlog = ?';
+    database.query(getRating, req.params.idBlog, (error, data) => {
         if (error) {
             console.log(error);
             res.status(400).send({error: `SQL ERROR: ${error}`});
             return;
         }
 
-        res.status(200).send({status: 'success', data})
-    });*/
+        res.status(200).send({status: 'success', data});
+    });
+});
+
+// for updating the rating column of the blog table with a specifi blog id
+app.put('/rating', (req, res) => {
+    if (!req.body.rating || !req.body.idBlog) {
+        res.status(400).send({error: 'Error: No new rating and/or blog id passed as a body parameter.'});
+        return;
+    }
+
+    // insert into database new rating
+    const updateRatingSQL = 'UPDATE blog SET rate = ? WHERE idBlog = ?';
+    const updateValues = [req.body.rating, req.body.idBlog];
+    database.query(updateRatingSQL, updateValues, (error, data) => {
+        if (error) {
+            console.log(error);
+            res.status(400).send({error: `SQL ERROR: ${error}`});
+            return;
+        }
+
+        res.status(200).send({status: 'success', data});
+    });
+});
+
+// add the comment to the database
+app.post('/insert-comment/:idBlog/', (req, res) => {
+    // idBlog is the id of the post you're commenting on
+    if (!req.params.idBlog || !req.body.description || !req.body.username) {
+        res.status(400).send({error: 'Error: ID blog, username, or description are empty.'});
+        return;
+    }
+
+    // get the user id of the person who just commented based on their username
+    const getIdOfUserWhoCommented = 'SELECT idUser FROM user WHERE username = ?';
+    database.query(getIdOfUserWhoCommented, req.body.username, (error, data) => {
+        if (error) {
+            console.log(error);
+            res.status(400).send({error: `SQL ERROR: ${error}`});
+            return;
+        }
+
+        const uid = data[0].idUser;
+
+        const findUserOfBlog = 'SELECT idUser FROM blog WHERE idBlog = ?';
+        database.query(findUserOfBlog, req.params.idBlog, (error, data) => {
+            if (error) {
+                console.log(error);
+                res.status(400).send({error: `SQL ERROR: ${error}`});
+                return;
+            }
+
+            // if post uid and uid of person commenting are the same,
+            // error out and disallow the person to make a comment on their own post
+            if (data[0].idUser === uid) {
+                res.status(400).send({error: `Error: User can't comment on their own post.`});
+                return;
+            }
+
+            // find out how many times the user has commented throughout the day
+            // if it's more than 3, then we don't allow the user to make any more comments
+            // if it's less than 3, we allow then to make comments
+            const commentTotal = 'SELECT idUser, date FROM comment WHERE idUser = ? AND DATE(`date`) = CURDATE()';
+            database.query(commentTotal, uid, (error, data) => {
+                if (error) {
+                    console.log(error);
+                    res.status(400).send({error: `SQL ERROR: ${error}`});
+                    return;
+                }
+
+                const numberOfCommentsForToday = data.length;
+                if (numberOfCommentsForToday >= 3) {
+                        res.status(400).send({error: `Error: User has already commented 3 times total for today.`});
+                        return;
+                } else {
+                    // // insert the comment into the database
+                    const insertSql = 'INSERT INTO comment (idUser, date, description, idBlog) VALUES (?, CURDATE(), ?, ?)';
+                    const insertValues = [uid, req.body.description, req.params.idBlog];
+                    database.query(insertSql, insertValues, (error, data) => {
+                        if (error) {
+                            console.log(error);
+                            res.status(400).send({error: `SQL ERROR: ${error}`});
+                            return;
+                        }
+                
+                        res.status(200).send({status: 'success', data})
+                    });
+                }
+            });
+        });
+    });
+
 });
 
 // returns all comments of a particular blog from its blog id
@@ -233,8 +321,6 @@ app.post('/create-post', (req, res) => {
 
 // handling user login
 app.post('/welcome', (req, res) => {
-    console.log('HERE');
-    console.log(req.body);
     const sql = 'SELECT * FROM user WHERE username = ?';
     database.query(sql, req.body.username, (error, userData) => {
         if (error) {

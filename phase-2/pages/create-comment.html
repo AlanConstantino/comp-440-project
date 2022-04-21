@@ -7,56 +7,70 @@
     <title>Create a comment</title>
 </head>
 <body>
-
     <form>
         <label for="description">Comment: </label><br>
         <textarea name="description" id="description" cols="30" rows="10"></textarea><br>
+        <label for="rating">Rating:</label>
+        <select name="rating" id="rating">
+            <option value="positive">Positive (+1)</option>
+            <option value="negative">Negative (-1)</option>
+        </select><br>
         <button id="post" type="submit">Post</button>
     </form>
 </body>
 
 <script>
+    const url = location.href.split("/");
+    const blogId = parseInt(url[url.length - 1]);
+    console.log(blogId);
     
-    const c = location.href.split("/");
-    
-    const blogID = parseInt(c[5]);
-    const userID = parseInt(c[4]);
 
     const button = document.getElementById('post');
-    console.log(c);
     button.addEventListener("click", (e) => {
         e.preventDefault();
 
         const description = document.getElementById('description').value;
-        console.log(description);
+        const username = sessionStorage.getItem('username');
+        const bodyData = { description, username };
 
-        const bodyData = { description };
+        const insertCommentOptions = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData)
+        };
+        fetch(`/insert-comment/${blogId}`, insertCommentOptions)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // send another fetch request about the rating
+                fetch(`/rating/${blogId}`, {method: 'GET'})
+                    .then(res => res.json())
+                    .then(data => {
+                        let currentRate = parseInt(data.data[0].rate);
+                        const ratingEl = document.getElementById('rating').value;
+                        if (ratingEl === 'positive') {
+                            currentRate++;
+                        } else {
+                            currentRate--;
+                        }
 
-        const options = {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyData)
-            };
+                        const ratingOptions = {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                rating: currentRate,
+                                idBlog: blogId
+                            })
+                        };
 
-        console.log(userID);
-
-        fetch(`/insert-comment/${blogID}/${userID}`, options)
-            .then(res => res.json())
-            .then(data => console.log(data));
-
-
-
+                        // insert the "currentRate" into the database
+                        fetch('/rating', ratingOptions)
+                            .then(res => res.json())
+                            .then(data => console.log(data));
+                });
+            }
+        });
     });
-
-
-
-
-
-
-
-
-
-
 </script>
 
 </html>

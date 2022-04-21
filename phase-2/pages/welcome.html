@@ -52,7 +52,7 @@
           const user = document.createElement('p');
           const createCommentLink = document.createElement('a');
           createCommentLink.innerText = 'Comment on this post';
-          createCommentLink.href = `./create-comment/${item.idUser}/${item.idBlog}`;
+          createCommentLink.href = `./create-comment/${item.idBlog}`;
 
         // fetch request to get data about user (i.e. their id and username)
         fetch(`/user/${item.idUser}`, {method: 'POST'})
@@ -67,7 +67,12 @@
           fetch(`/comments/${item.idBlog}`, {method: 'POST'})
             .then(response => response.json())
             .then(res => {
-              comment.innerText = 'Comment: ' + res.data[0].description;
+              if (!res.data[0]) {
+                comment.innerText = 'Comment: No comments.';
+              } else {
+                comment.innerText = 'Comment: ' + res.data[0].description;
+              }
+
               fetch(`/user/${res.data[0].idUser}`, {method: 'POST'})
                 .then(response => response.json())
                 .then(res => {
