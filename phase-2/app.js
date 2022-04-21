@@ -221,6 +221,25 @@ app.post('/posts', (req, res) => {
     });
 });
 
+// returns all the tags associated with the blog id
+app.get('/tags/:idBlog', (req, res) => {
+    if (!req.params.idBlog) {
+        res.status(400).send({error: 'Error: No ID passed in.'});
+        return;
+    }
+
+    const getAllTags = 'SELECT * FROM tag WHERE idBlog = ?';
+    database.query(getAllTags, req.params.idBlog, (error, data) => {
+        if (error) {
+            console.log(error);
+            res.status(400).send({error: `SQL ERROR: ${error}`});
+            return;
+        }
+
+        res.status(200).send({status: 'success', data})
+    });
+});
+
 // returns data about a specific user from their id
 app.post('/user/:id', (req, res) => {
     if (!req.params.id) {
@@ -242,6 +261,7 @@ app.post('/user/:id', (req, res) => {
 
 // handling user login
 app.post('/create-post', (req, res) => {
+    console.log(req.body);
     if (!req.body.username) {
         res.status(400).send({error: 'User is not logged in!'});
         return;
@@ -265,8 +285,8 @@ app.post('/create-post', (req, res) => {
 
         // SQL statement to insert the blog into the 'blog' table alongside the user id
         // we queried earlier
-        const insertSql = 'INSERT INTO blog (idUser, subject, description, date) VALUES (?, ?, ?, CURDATE())';
-        const insertValues = [userId, req.body.subject, req.body.description];
+        const insertSql = 'INSERT INTO blog (idUser, subject, description, date, rate) VALUES (?, ?, ?, CURDATE(), ?)';
+        const insertValues = [userId, req.body.subject, req.body.description, 0];
         database.query(insertSql, insertValues, (error, data) => {
             if (error) {
                 console.log(error);

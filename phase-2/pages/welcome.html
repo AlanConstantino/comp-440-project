@@ -43,9 +43,11 @@
           commentTitle.innerText = 'Comments';
           const comment = document.createElement('p');
           const usernameOfComment = document.createElement('p');
-          
+
           // for post
           const subject = document.createElement('h3');
+          const tags = document.createElement('p');
+          tags.innerText = "Tags: ";
           const rate = document.createElement('p');
           const description = document.createElement('p');
           const date = document.createElement('p');
@@ -53,6 +55,15 @@
           const createCommentLink = document.createElement('a');
           createCommentLink.innerText = 'Comment on this post';
           createCommentLink.href = `./create-comment/${item.idBlog}`;
+        
+        fetch(`/tags/${item.idBlog}`)
+          .then(res => res.json())
+          .then(data => {
+            data.data.forEach(item => {
+              tags.innerText += ` ${item.tagName} `;
+              // console.log(item.tagName);
+            });
+          });
 
         // fetch request to get data about user (i.e. their id and username)
         fetch(`/user/${item.idUser}`, {method: 'POST'})
@@ -64,6 +75,7 @@
           date.innerText = 'Date: ' + item.date;
           rate.innerText = 'Rate: ' + item.rate;
 
+          // fetch request to get comments associated with each post
           fetch(`/comments/${item.idBlog}`, {method: 'POST'})
             .then(response => response.json())
             .then(res => {
@@ -73,6 +85,7 @@
                 comment.innerText = 'Comment: ' + res.data[0].description;
               }
 
+              // fetch request to get the user's username associated with the comment
               fetch(`/user/${res.data[0].idUser}`, {method: 'POST'})
                 .then(response => response.json())
                 .then(res => {
@@ -88,6 +101,7 @@
           // for post
           postsContainer.appendChild(subject);
           postsContainer.appendChild(description);
+          postsContainer.appendChild(tags);
           postsContainer.appendChild(rate);
           postsContainer.appendChild(date);
           postsContainer.appendChild(user);
