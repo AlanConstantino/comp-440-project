@@ -80,7 +80,10 @@ app.get('/create-comment/:idUser/:idBlog', (req, res) => {
 
 // add the comment to the database
 app.post('/insert-comment/:idBlog/:idUser', (req, res) => {
-    if (!req.params.idBlog || !req.params.idUser || !req.body.description) {
+
+    console.log(req.params);
+
+    /*if (!req.params.idBlog || !req.params.idUser || !req.body.description) {
         res.status(400).send({error: 'Error: ID blog, ID user, or description are empty.'});
         return;
     }
@@ -94,7 +97,7 @@ app.post('/insert-comment/:idBlog/:idUser', (req, res) => {
         }
 
         res.status(200).send({status: 'success', data})
-    });
+    });*/
 });
 
 // returns all comments of a particular blog from its blog id

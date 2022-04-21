@@ -4,12 +4,59 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create A Post</title>
+    <title>Create a comment</title>
 </head>
 <body>
-    <h1>Hello World!</h1>
+
+    <form>
+        <label for="description">Comment: </label><br>
+        <textarea name="description" id="description" cols="30" rows="10"></textarea><br>
+        <button id="post" type="submit">Post</button>
+    </form>
 </body>
+
 <script>
-    console.log(location.href.split('/'));
+    
+    const c = location.href.split("/");
+    
+    const blogID = parseInt(c[5]);
+    const userID = parseInt(c[4]);
+
+    const button = document.getElementById('post');
+    console.log(c);
+    button.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        const description = document.getElementById('description').value;
+        console.log(description);
+
+        const bodyData = { description };
+
+        const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData)
+            };
+
+        console.log(userID);
+
+        fetch(`/insert-comment/${blogID}/${userID}`, options)
+            .then(res => res.json())
+            .then(data => console.log(data));
+
+
+
+    });
+
+
+
+
+
+
+
+
+
+
 </script>
+
 </html>
