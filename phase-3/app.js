@@ -9,14 +9,7 @@ const path = require('path');
 const port = 3000;
 const bodyParser = require('body-parser'); // parses body of http request
 const INITIALIZE_DATA_FILE = 'schema-and-data.sql';
-
-// for parsing body of requests
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-// mysql database connection
 const mysql = require('mysql');
-const { query } = require('express');
 const database = mysql.createConnection({
     host: '127.0.0.1',
     user: 'user',
@@ -24,6 +17,7 @@ const database = mysql.createConnection({
     port: '3306',
     database: 'comp440'
 });
+
 database.connect((error) => {
     if (error) {
         return console.error('ERROR: ' + error.message)
@@ -31,6 +25,39 @@ database.connect((error) => {
 
     console.log('Connection to MySQL server successful.');
 });
+
+// for parsing body of requests
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+const db = {
+    getPosts: () => {
+        return new Promise((resolve, reject) => {
+            const allPosts = 'SELECT * FROM blog ORDER BY idBlog DESC';
+            database.query(allPosts, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+    
+                resolve(data);
+            });
+        });
+    },
+    getTags: (idBlog) => {
+        return new Promise((resolve, reject) => {
+            const getAllTags = 'SELECT * FROM tag WHERE idBlog = ?';
+            database.query(getAllTags, idBlog, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                
+                resolve(data);
+            });
+        });
+    },
+};
 
 // helper functions to validate if string is valid
 // i.e. checks string to see if not empty, null, or undefined
@@ -208,36 +235,32 @@ app.post('/comments/:idBlog', (req, res) => {
 });
 
 // returns all the posts of all time
-app.post('/posts', (req, res) => {
-    const allPosts = 'SELECT * FROM blog ORDER BY idBlog DESC';
-    database.query(allPosts, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
-        }
-
-        res.status(200).send({status: 'success', data})
-    });
+app.post('/posts', async (req, res) => {
+    try {
+        // get all posts from database and return them
+        const data = await db.getPosts();
+        return res.status(200).send({status: 'success', data})
+    } catch (e) {
+        const {code, errno, sqlMessage, sql} = e;
+        const error = {code, errno, sqlMessage, sql};
+        return res.status(400).send({status: 'error', error});
+    }
 });
 
 // returns all the tags associated with the blog id
-app.get('/tags/:idBlog', (req, res) => {
+app.get('/tags/:idBlog', async (req, res) => {
+    // check to see if idBlog is a parameter, if not error out
     if (!req.params.idBlog) {
-        res.status(400).send({error: 'Error: No ID passed in.'});
+        res.status(400).send({status: 'error', error: 'Error: No ID passed in.'});
         return;
     }
 
-    const getAllTags = 'SELECT * FROM tag WHERE idBlog = ?';
-    database.query(getAllTags, req.params.idBlog, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
-        }
-
+    try {
+        const data = await db.getTags(req.params.idBlog);
         res.status(200).send({status: 'success', data})
-    });
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
 // returns data about a specific user from their id
@@ -432,3 +455,4 @@ app.listen(port, () => {
     console.log(`Server started on port ${port}.\nGo to localhost:${port} to view webpage.`)
 });
 
+module.exports = { database }
