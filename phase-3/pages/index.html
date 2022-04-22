@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css">
+    <title>Login</title>
+  </head>
+  <body>
+    <!-- landing page (i.e. login) -->
+    <center><h1>Login</h1></center>
+
+    <form action="/welcome" method="POST">
+    <!-- <form> -->
+
+      <div class="container">
+        <label>Username: </label>
+        <input type="text" placeholder="Enter Username" id="username" name="username" required>
+        <label>Password: </label>
+        <input type="password" placeholder="Enter Password" id="password" name="password" required><br>
+        <button id="login" type="submit">Login</button>
+        <a href="/register">Register</a>
+      </div>
+
+    </form>
+
+    <script>
+      window.sessionStorage.clear();
+      const loginButton = document.getElementById('login');
+      loginButton.addEventListener('click', (e) => {
+        const username = document.getElementById('username').value;
+        window.sessionStorage.setItem('username', username);
+      });
+    </script>
+
+  </body>
+</html>

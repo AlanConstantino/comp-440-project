@@ -1,0 +1,37 @@
+body {
+    background-color: #F0F8FF;
+    width: 100%;
+    padding: 15px;
+    margin: 0px 0px;
+    border: none;
+    cursor: pointer;
+}
+
+form {
+    width: 20%;
+    margin: auto;
+    border: 3px solid #033866
+}
+input[type=text],input[type=password] {
+    width: 100%;
+    margin: 8px,0;
+    padding: 12px 20px;
+    display: inline-block;
+    border: 2px solid rgb(9, 35, 51);
+    box-sizing: border-box;
+}
+
+.container {
+    padding: 25px;
+}
+#comment-box{
+    border: none;
+    border-radius: 5px;
+    width: 50%;
+}
+#post{
+    border: none;
+}
+#post:hover{
+    background-color: rgb(255, 95, 95);
+}

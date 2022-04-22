@@ -1,0 +1,15 @@
+{
+  "name": "run-my-sql-file",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["run", "sql", "files", "file", "mysql", "exec", "execute", "a", "an"],
+  "author": "Vinicius M.",
+  "license": "Eiffel Forum License, version 2",
+  "dependencies": {
+    "mysql2": "^1.7.0"
+  }
+}
