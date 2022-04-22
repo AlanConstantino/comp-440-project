@@ -242,6 +242,7 @@ app.post('/insert-comment/:idBlog/', (req, res) => {
 });
 
 // returns all comments of a particular blog from its blog id
+// CONVERT TO GET REQUEST
 app.post('/comments/:idBlog', async (req, res) => {
     if (!req.params.idBlog) {
         res.status(400).send({error: 'Error: No ID passed in.'});
@@ -257,6 +258,7 @@ app.post('/comments/:idBlog', async (req, res) => {
 });
 
 // returns all the posts of all time
+// CONVERT TO GET REQUEST
 app.post('/posts', async (req, res) => {
     try {
         // get all posts from database and return them
@@ -286,6 +288,7 @@ app.get('/tags/:idBlog', async (req, res) => {
 });
 
 // returns data about a specific user from their id
+// CONVERT TO GET REQUEST
 app.post('/user/:id', (req, res) => {
     if (!req.params.id) {
         res.status(400).send({error: 'Error: No ID passed in.'});
@@ -305,6 +308,8 @@ app.post('/user/:id', (req, res) => {
 });
 
 // handling user login
+// TIME CONSUMING, COME BACK LATER
+// TIME CONSUMING, COME BACK LATER
 app.post('/create-post', (req, res) => {
     console.log(req.body);
     if (!req.body.username) {
