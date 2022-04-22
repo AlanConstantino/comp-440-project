@@ -10,6 +10,7 @@ const port = 3000;
 const bodyParser = require('body-parser'); // parses body of http request
 const INITIALIZE_DATA_FILE = 'schema-and-data.sql';
 const mysql = require('mysql');
+const { resolve } = require('path');
 const database = mysql.createConnection({
     host: '127.0.0.1',
     user: 'user',
@@ -64,6 +65,20 @@ const db = {
         return new Promise((resolve, reject) => {
             const rating = 'SELECT rate FROM blog WHERE idBlog = ?';
             database.query(rating, idBlog, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // returns all the comments associated with the id of a certain blog
+    // and are returned in descending order by the id of the comment
+    getComments: (idBlog) => {
+        return new Promise((resolve, reject) => {
+            const allCommentsOfBlog = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idComment DESC';
+            database.query(allCommentsOfBlog, idBlog, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
@@ -227,22 +242,18 @@ app.post('/insert-comment/:idBlog/', (req, res) => {
 });
 
 // returns all comments of a particular blog from its blog id
-app.post('/comments/:idBlog', (req, res) => {
+app.post('/comments/:idBlog', async (req, res) => {
     if (!req.params.idBlog) {
         res.status(400).send({error: 'Error: No ID passed in.'});
         return;
     }
 
-    const allCommentsOfBlog = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idComment DESC';
-    database.query(allCommentsOfBlog, req.params.idBlog, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
-        }
-
+    try {
+        const data = await db.getComments(req.params.idBlog);
         res.status(200).send({status: 'success', data})
-    });
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
 // returns all the posts of all time
