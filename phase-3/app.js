@@ -31,6 +31,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 const db = {
+    // gets all blogs/posts ever posted
     getPosts: () => {
         return new Promise((resolve, reject) => {
             const allPosts = 'SELECT * FROM blog ORDER BY idBlog DESC';
@@ -44,6 +45,7 @@ const db = {
             });
         });
     },
+    // returns the tags of whichever blog it's associated with given its id
     getTags: (idBlog) => {
         return new Promise((resolve, reject) => {
             const getAllTags = 'SELECT * FROM tag WHERE idBlog = ?';
@@ -53,6 +55,19 @@ const db = {
                     return;
                 }
                 
+                resolve(data);
+            });
+        });
+    },
+    // returns the rating value of a specific blog given the blog's id
+    getRating: (idBlog) => {
+        return new Promise((resolve, reject) => {
+            const rating = 'SELECT rate FROM blog WHERE idBlog = ?';
+            database.query(rating, idBlog, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
                 resolve(data);
             });
         });
@@ -107,25 +122,21 @@ app.get('/create-comment/:idBlog', (req, res) => {
 });
 
 // return the rating of the blog based on the blog's id
-app.get('/rating/:idBlog', (req, res) => {
+app.get('/rating/:idBlog', async (req, res) => {
     if (!req.params.idBlog) {
         res.status(400).send({error: 'Error: No blog id passed as a body parameter.'});
         return;
     }
-
-    const getRating = 'SELECT rate FROM blog WHERE idBlog = ?';
-    database.query(getRating, req.params.idBlog, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
-        }
-
+    
+    try {
+        const data = await db.getRating(req.params.idBlog);
         res.status(200).send({status: 'success', data});
-    });
+    } catch(error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
-// for updating the rating column of the blog table with a specifi blog id
+// for updating the rating column of the blog table with a specific blog id
 app.put('/rating', (req, res) => {
     if (!req.body.rating || !req.body.idBlog) {
         res.status(400).send({error: 'Error: No new rating and/or blog id passed as a body parameter.'});
