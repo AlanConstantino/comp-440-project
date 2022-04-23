@@ -181,6 +181,62 @@ const db = {
             });
         });
     },
+    insertPost: (idUser, subject, description) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'INSERT INTO blog (idUser, subject, description, date, rate) VALUES (?, ?, ?, CURDATE(), ?)';
+            const values = [idUser, subject, description, 0];
+            database.query(sql, values, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                
+                resolve(data);
+            });
+        });
+    },
+    insertTag: (tagName, idBlog) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'INSERT INTO tag (tagName, idBlog) VALUES (?, ?)';
+            const values = [tagName, idBlog];
+            database.query(sql, values, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(data);
+            });
+        });
+    },
+    insertComment: (idUser, description, idBlog) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'INSERT INTO comment (idUser, date, description, idBlog) VALUES (?, CURDATE(), ?, ?)';
+            const values = [idUser, description, idBlog];
+            database.query(sql, values, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+        
+                resolve(data);
+            });
+        });
+    },
+    // figure out how many times a particular user has commented throughout
+    // the day from their user id
+    getCommentTotal: (idUser) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT idUser, date FROM comment WHERE idUser = ? AND DATE(`date`) = CURDATE()';
+            database.query(sql, idUser, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
 };
 
 // helper functions to validate if string is valid
@@ -268,72 +324,35 @@ app.post('/insert-comment/:idBlog/', async (req, res) => {
         return;
     }
 
-    // try {
-    //     const uid = await db.getIdOfUsername(req.body.username);
-    //     const d = await db.getUserIdOfBlog(uid);
-    // } catch (error) {
-    //     res.status(400).send({status: 'error', error});
-    // }
+    try {
+        const userData = await db.getIdOfUsername(req.body.username);
+        const userOfBlog = await db.getUserIdOfBlog(req.params.idBlog);
+        
+        // if the id of both the person who is commenting and the person who wrote the blog
+        // are the same, error out since a user can't comment on their own post/blog
+        const idOfCommentor = userData[0].idUser;
+        const idOfPersonWhoPostedBlog = userOfBlog[0].idUser;
+        if (idOfCommentor === idOfPersonWhoPostedBlog) {
+            res.status(400).send({status: 'error', error: `Error: User can't comment on their own post.`});
+            return;
+        }
+        
+        const dataOfCommentTotal = await db.getCommentTotal(idOfCommentor);
+        const commentTotal = dataOfCommentTotal.length;
 
-    // get the user id of the person who just commented based on their username
-    const getIdOfUserWhoCommented = 'SELECT idUser FROM user WHERE username = ?';
-    database.query(getIdOfUserWhoCommented, req.body.username, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
+        // if user has already commented more than 3 or more times, error out
+        if (commentTotal >= 3) {
+            res.status(400).send({status: 'error', error: `Error: User has already commented 3 times total for today.`});
             return;
         }
 
-        const uid = data[0].idUser;
-
-        const findUserOfBlog = 'SELECT idUser FROM blog WHERE idBlog = ?';
-        database.query(findUserOfBlog, req.params.idBlog, (error, data) => {
-            if (error) {
-                console.log(error);
-                res.status(400).send({error: `SQL ERROR: ${error}`});
-                return;
-            }
-
-            // if post uid and uid of person commenting are the same,
-            // error out and disallow the person to make a comment on their own post
-            if (data[0].idUser === uid) {
-                res.status(400).send({error: `Error: User can't comment on their own post.`});
-                return;
-            }
-
-            // find out how many times the user has commented throughout the day
-            // if it's more than 3, then we don't allow the user to make any more comments
-            // if it's less than 3, we allow then to make comments
-            const commentTotal = 'SELECT idUser, date FROM comment WHERE idUser = ? AND DATE(`date`) = CURDATE()';
-            database.query(commentTotal, uid, (error, data) => {
-                if (error) {
-                    console.log(error);
-                    res.status(400).send({error: `SQL ERROR: ${error}`});
-                    return;
-                }
-
-                const numberOfCommentsForToday = data.length;
-                if (numberOfCommentsForToday >= 3) {
-                        res.status(400).send({error: `Error: User has already commented 3 times total for today.`});
-                        return;
-                } else {
-                    // // insert the comment into the database
-                    const insertSql = 'INSERT INTO comment (idUser, date, description, idBlog) VALUES (?, CURDATE(), ?, ?)';
-                    const insertValues = [uid, req.body.description, req.params.idBlog];
-                    database.query(insertSql, insertValues, (error, data) => {
-                        if (error) {
-                            console.log(error);
-                            res.status(400).send({error: `SQL ERROR: ${error}`});
-                            return;
-                        }
-                
-                        res.status(200).send({status: 'success', data})
-                    });
-                }
-            });
-        });
-    });
-
+        // insert comment into database
+        await db.insertComment(idOfCommentor, req.body.description, req.params.idBlog);
+        res.status(200).send({status: 'success', data: 'Comment inserted succesfully!'});
+        // res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
 // returns all comments of a particular blog from its blog id
@@ -399,10 +418,7 @@ app.post('/user/:id', async (req, res) => {
 });
 
 // handling user login
-// TIME CONSUMING, COME BACK LATER
-// TIME CONSUMING, COME BACK LATER
-app.post('/create-post', (req, res) => {
-    console.log(req.body);
+app.post('/create-post', async (req, res) => {
     if (!req.body.username) {
         res.status(400).send({error: 'User is not logged in!'});
         return;
@@ -413,71 +429,23 @@ app.post('/create-post', (req, res) => {
         return;
     }
 
-    // SQL statement to find the id of the user
-    const selectSql = 'SELECT idUser FROM user WHERE username = ?';
-    database.query(selectSql, req.body.username, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
+    try {
+        const userData = await db.getIdOfUsername(req.body.username);
+        const idUser = userData[0].idUser;
+        const insertPost = await db.insertPost(idUser, req.body.subject, req.body.description);
+        const idBlog = insertPost.insertId;
+        const tags = req.body.tags;
+
+        if (tags.length >= 1) {
+            for (let i = 0; i < tags.length; i++) {
+                await db.insertTag(tags[i], idBlog);
+            }
         }
 
-        const userId = data[0].idUser;
-
-        // SQL statement to insert the blog into the 'blog' table alongside the user id
-        // we queried earlier
-        const insertSql = 'INSERT INTO blog (idUser, subject, description, date, rate) VALUES (?, ?, ?, CURDATE(), ?)';
-        const insertValues = [userId, req.body.subject, req.body.description, 0];
-        database.query(insertSql, insertValues, (error, data) => {
-            if (error) {
-                console.log(error);
-                res.status(400).send({error: `SQL ERROR: ${error}`});
-                return;
-            }
-
-            const blogId = data.insertId;
-            const insertTagValues = req.body.tags;
-
-            insertTagValues.forEach((tag) => {
-                const values = [tag, blogId];
-
-                // SQL statement to link the blog's id to the tags associated with the blog
-                const insertTagSql = 'INSERT INTO tag (tagName, idBlog) VALUES (?, ?)';
-                database.query(insertTagSql, values, (error, data) => {
-                    if (error) {
-                        console.log(error);
-                        res.status(400).send({error: `SQL ERROR: ${error}`});
-                        return;
-                    }
-            
-                });
-            });
-        });
-        res.status(200).send({status: 'success', message: 'Successfully inserted blog into database!'});
-    });
-
-    // fix later to use callbacks (like below) instead of nested async calls (like above)
-    
-    // const getUserId = (req, cb) => {
-    //     const selectSql = 'SELECT idUser FROM user WHERE username = ?';
-    //     database.query(selectSql, req.body.username, (error, data) => {
-    //         if (error) {
-    //             console.log(error);
-    //             res.status(400).send({error: `SQL ERROR: ${error}`});
-    //             return;
-    //         }
-    
-    //         return cb(data[0].idUser);
-    //     });
-    // };
-
-    // let uid = null;
-    // getUserId(req, (result) => {
-    //     uid = result;
-    //     console.log(uid);
-    //     // rest of code goes here
-    // });
-    // console.log(uid);
+        res.status(200).send({status: 'success', data: 'Successfully inserted blog into database!'});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
 // handling user login
@@ -548,7 +516,7 @@ app.post('/initialize', (req, res) => {
     console.log(sqlFile);
     runner.runFile(sqlFile, (error) => {
         if (error) {
-            res.status(400).send({error: error});
+            res.status(400).send({error});
         }
         res.status(200).send({message: `Successfully executed the ${INITIALIZE_DATA_FILE} file!`});
     });
