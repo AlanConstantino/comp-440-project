@@ -4,144 +4,154 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../pages/css/normalize.css">
+    <link rel="stylesheet" href="../pages/css/skeleton.css">
+    <link rel="stylesheet" href="../pages/css/style.css">
     <title>Welcome</title>
   </head>
   <body>
-    <center><h1>Welcome</h1></center>
-    <!-- What user sees when they login -->
-    <!--
-      This page must contain a "Initialize Database" button when once clicked, it sends a post
-      request to the backend to populate the database with dummy data provided by the professor.
-
-      Other than that this page is just blank (can maybe show user name and email alongisde a logout button).
-     -->
-     <center><div id="message"></div></center>
-     <center><a href="./create-post">Create Post</a></center>
-     <center><button id="initialize" type="button">Initialize Database</button></center>
-     <center><button id="logout" type="button">Logout</button></center>
-     <center><div id="messages"></div></center>
-     <center>
-       <hr>
-       <h1>All Posts</h1>
-       <hr>
-      <div id="posts-container"></div>
-    </center>
-
+    <div class="container">
+      <div class="row">
+        <h1>Welcome</h1>
+        <div id="message"></div>
+        <div id="content">
+          <div class="vertical">
+            <h5 id="username"></h5>
+            <a href="./create-post">Create Post</a>
+            <button id="initialize" type="button">Initialize Database</button>
+            <button id="logout" type="button">Logout</button>
+          </div>
+          <hr><h1>All Posts</h1><hr>
+          <div id="posts-container"></div>
+        </div>
+      </div>
+    </div>
   </body>
   <script>
-    // populates the 'posts-container' div
-    fetch('/posts', {method: 'POST'})
-      .then((response) => response.json())
-      .then((data) => {
-        const postsContainer = document.getElementById('posts-container');
-
-        data.data.forEach((item) => {
-          // for comment
-          const commentContainer = document.createElement('div');
-          const commentTitle = document.createElement('h4');
-          commentTitle.innerText = 'Comments';
-          const comment = document.createElement('p');
-          const usernameOfComment = document.createElement('p');
-
-          // for post
-          const subject = document.createElement('h3');
-          const tags = document.createElement('p');
-          tags.innerText = "Tags: ";
-          const rate = document.createElement('p');
-          const description = document.createElement('p');
-          const date = document.createElement('p');
-          const user = document.createElement('p');
-          const createCommentLink = document.createElement('a');
-          createCommentLink.innerText = 'Comment on this post';
-          createCommentLink.href = `./create-comment/${item.idBlog}`;
-        
-        fetch(`/tags/${item.idBlog}`)
-          .then(res => res.json())
-          .then(data => {
-            data.data.forEach(item => {
-              tags.innerText += ` ${item.tagName} `;
-              // console.log(item.tagName);
-            });
-          });
-
-        // fetch request to get data about user (i.e. their id and username)
-        fetch(`/user/${item.idUser}`, {method: 'POST'})
-          .then(response => response.json())
-          .then(res => user.innerText = 'by ' + res.data[0].username);
+    // if the user is not logged in, let them know
+    if (!window.sessionStorage.getItem('username')) {
+      const divMessage = document.getElementById('message');
+      divMessage.innerHTML = 'You are NOT logged in! <br> Click <a href="/">here</a> to login.<br><br>';
+      document.getElementById('content').hidden = true;
+    } else {
+      // document.getElementById('content').hidden = false;
+      const usernameEl = document.getElementById('username');
+      usernameEl.innerText = sessionStorage.getItem('username');
+      // populates the 'posts-container' div
+      fetch('/posts', {method: 'POST'})
+        .then((response) => response.json())
+        .then((data) => {
+          const postsContainer = document.getElementById('posts-container');
   
-          subject.innerText = 'Subject: ' + item.subject;
-          description.innerText = 'Description: ' + item.description;
-          date.innerText = 'Date: ' + item.date;
-          rate.innerText = 'Rate: ' + item.rate;
-
-          // fetch request to get comments associated with each post
-          fetch(`/comments/${item.idBlog}`, {method: 'POST'})
-            .then(response => response.json())
-            .then(res => {
-              if (!res.data[0]) {
-                comment.innerText = 'Comment: No comments.';
-              } else {
-                comment.innerText = 'Comment: ' + res.data[0].description;
-              }
-
-              // fetch request to get the user's username associated with the comment
-              fetch(`/user/${res.data[0].idUser}`, {method: 'POST'})
-                .then(response => response.json())
-                .then(res => {
-                  console.log(res.data[0].username);
-                  usernameOfComment.innerHTML = `<i>Comment by</i> <b>${res.data[0].username}</b>`;
-                });
-            });
+          data.data.forEach((item) => {
+            // for comment
+            const commentContainer = document.createElement('div');
+            const commentTitle = document.createElement('h4');
+            commentTitle.innerText = 'Comments';
+            const comment = document.createElement('p');
+            const usernameOfComment = document.createElement('p');
+  
+            // for post
+            const subject = document.createElement('h3');
+            const tags = document.createElement('p');
+            tags.innerText = "Tags: ";
+            const rate = document.createElement('p');
+            const description = document.createElement('p');
+            const date = document.createElement('p');
+            const user = document.createElement('p');
+            const createCommentLink = document.createElement('a');
+            createCommentLink.innerText = 'Comment on this post';
+            createCommentLink.href = `./create-comment/${item.idBlog}`;
           
-          // for comment
-          commentContainer.appendChild(comment);
-          commentContainer.appendChild(usernameOfComment);
-
-          // for post
-          postsContainer.appendChild(subject);
-          postsContainer.appendChild(description);
-          postsContainer.appendChild(tags);
-          postsContainer.appendChild(rate);
-          postsContainer.appendChild(date);
-          postsContainer.appendChild(user);
-          postsContainer.appendChild(commentTitle);
-          postsContainer.appendChild(commentContainer);
-          postsContainer.appendChild(createCommentLink);
-          postsContainer.appendChild(document.createElement('hr'));
+          fetch(`/tags/${item.idBlog}`)
+            .then(res => res.json())
+            .then(data => {
+              data.data.forEach(item => {
+                tags.innerText += ` ${item.tagName} `;
+                // console.log(item.tagName);
+              });
+            });
+  
+          // fetch request to get data about user (i.e. their id and username)
+          fetch(`/user/${item.idUser}`, {method: 'POST'})
+            .then(response => response.json())
+            .then(res => user.innerText = 'by ' + res.data[0].username);
+    
+            subject.innerText = 'Subject: ' + item.subject;
+            description.innerText = 'Description: ' + item.description;
+            date.innerText = 'Date: ' + item.date;
+            rate.innerText = 'Rate: ' + item.rate;
+  
+            // fetch request to get comments associated with each post
+            fetch(`/comments/${item.idBlog}`, {method: 'POST'})
+              .then(response => response.json())
+              .then(res => {
+                if (!res.data[0]) {
+                  comment.innerText = 'Comment: No comments.';
+                } else {
+                  comment.innerText = 'Comment: ' + res.data[0].description;
+                }
+  
+                // fetch request to get the user's username associated with the comment
+                fetch(`/user/${res.data[0].idUser}`, {method: 'POST'})
+                  .then(response => response.json())
+                  .then(res => {
+                    // console.log(res.data[0].username);
+                    usernameOfComment.innerHTML = `<i>Comment by</i> <b>${res.data[0].username}</b>`;
+                  });
+              });
+            
+            // for comment
+            commentContainer.appendChild(comment);
+            commentContainer.appendChild(usernameOfComment);
+  
+            // for post
+            postsContainer.appendChild(subject);
+            postsContainer.appendChild(description);
+            postsContainer.appendChild(tags);
+            postsContainer.appendChild(rate);
+            postsContainer.appendChild(date);
+            postsContainer.appendChild(user);
+            postsContainer.appendChild(commentTitle);
+            postsContainer.appendChild(commentContainer);
+            postsContainer.appendChild(createCommentLink);
+            postsContainer.appendChild(document.createElement('hr'));
+          });
         });
+  
+      // initialize button functionality
+      const initializeButton = document.getElementById('initialize');
+      initializeButton.addEventListener('click', (e) => {
+        e.preventDefault();
+  
+        const options = {
+          method: 'POST',
+        };
+  
+        fetch('/initialize', options)
+          .then(response => response.json())
+          .then(data => {
+            const message = document.getElementById('message');
+            console.log(data.message);
+            message.textContent = data.message;
+          });
       });
+  
+      // logout button functionality
+      const logoutButton = document.getElementById('logout');
+      logoutButton.addEventListener('click', (e) => {
+        e.preventDefault();
+  
+        const options = {
+          method: 'POST'
+        }
+        fetch('/logout', options)
+          .then(response => console.log(response));
+        
+        window.location.href = '/';
+      });
+    }
 
-    // initialize button functionality
-    const initializeButton = document.getElementById('initialize');
-    initializeButton.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const options = {
-        method: 'POST',
-      };
-
-      fetch('/initialize', options)
-        .then(response => response.json())
-        .then(data => {
-          const message = document.getElementById('message');
-          console.log(data.message);
-          message.textContent = data.message;
-        });
-    });
-
-    // logout button functionality
-    const logoutButton = document.getElementById('logout');
-    logoutButton.addEventListener('click', (e) => {
-      e.preventDefault();
-
-      const options = {
-        method: 'POST'
-      }
-      fetch('/logout', options)
-        .then(response => console.log(response));
-      
-      window.location.href = '/';
-    });
   </script>
 </html>

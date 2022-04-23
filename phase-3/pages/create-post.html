@@ -4,53 +4,63 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../pages/css/normalize.css">
+    <link rel="stylesheet" href="../pages/css/skeleton.css">
+    <link rel="stylesheet" href="../pages/css/style.css">
     <title>Create A Post</title>
 </head>
 <body>
-    <h1>Create a Post</h1>
-    <div id="message"></div>
-    <form>
-        <label for="subject">Subject</label><br>
-        <input id="subject" type="text" placeholder="Enter Subject" name="subject" required><br>
-        <label for="tags">Tags</label><br>
-        <input id="tags" type="text" placeholder="Enter Tags (seperate by comma)" name="tags" required><br>
-        <label for="description">Description: </label><br>
-        <textarea name="description" id="description" cols="30" rows="10"></textarea><br>
-        <button id="create" type="submit">Create</button>
-    </form>
+    <div class="container">
+        <div class="row">
+            <h1>Create a Post</h1>
+            <div id="message"></div>
+            <div id="content">
+                <form>
+                    <label for="subject">Subject</label><br>
+                    <input id="subject" type="text" placeholder="Enter Subject" name="subject" required><br>
+                    <label for="tags">Tags</label><br>
+                    <input id="tags" type="text" placeholder="Enter Tags (seperate by comma)" name="tags" required><br>
+                    <label for="description">Description: </label><br>
+                    <textarea name="description" id="description" cols="30" rows="10"></textarea><br>
+                    <button id="create" type="submit">Create</button>
+                    <a href="./welcome">Go back</a>
+                </form>
+            </div>
+        </div>
+    </div>
     <script>
         // if the user is not logged in, let them know
         if (!window.sessionStorage.getItem('username')) {
             const divMessage = document.getElementById('message');
-            divMessage.innerHTML = 'You are NOT logged in! <br> Click <a href="./">here</a> to login.<br><br>';
+            divMessage.innerHTML = 'You are NOT logged in! <br> Click <a href="/">here</a> to login.<br><br>';
+            document.getElementById('content').hidden = true;
+        } else {
+            const createButton = document.getElementById('create');
+            createButton.addEventListener('click', (e) => {
+                e.preventDefault();
+    
+                const username = window.sessionStorage.getItem('username');
+                const subject = document.getElementById('subject').value.trim();
+                const description = document.getElementById('description').value.trim();
+                const tags = [];
+                
+                // comma separating the tags and sanitizing them for whitespaces then
+                // putting them into the tags array
+                const tagsEl = document.getElementById('tags').value.trim().split(',');
+                tagsEl.forEach((tag) => tags.push(tag.trim()));
+    
+                const bodyData = { subject, description, tags, username };
+                const options = {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                };
+                fetch('/create-post', options)
+                    .then(res => res.json())
+                    .then(data => console.log(data));
+            });
         }
-
-        
-
-        const createButton = document.getElementById('create');
-        createButton.addEventListener('click', (e) => {
-            e.preventDefault();
-
-            const username = window.sessionStorage.getItem('username');
-            const subject = document.getElementById('subject').value.trim();
-            const description = document.getElementById('description').value.trim();
-            const tags = [];
-            
-            // comma separating the tags and sanitizing them for whitespaces then
-            // putting them into the tags array
-            const tagsEl = document.getElementById('tags').value.trim().split(',');
-            tagsEl.forEach((tag) => tags.push(tag.trim()));
-
-            const bodyData = { subject, description, tags, username };
-            const options = {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyData)
-            };
-            fetch('/create-post', options)
-                .then(res => res.json())
-                .then(data => console.log(data));
-        });
     </script>
 </body>
 </html>

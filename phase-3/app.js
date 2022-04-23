@@ -29,6 +29,7 @@ database.connect((error) => {
 // for parsing body of requests
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use('/pages', express.static(path.join(__dirname, "pages")));
 
 const db = {
     // gets all blogs/posts ever posted
@@ -269,6 +270,11 @@ function validRegistrationData(req) {
 // index page (i.e. login page)
 app.get(['/', '/login'], (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/index.html'));
+});
+
+// welcome page
+app.get('/welcome', async (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages/welcome.html'))
 });
 
 // register page

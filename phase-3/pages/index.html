@@ -4,26 +4,26 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../pages/css/normalize.css">
+    <link rel="stylesheet" href="../pages/css/skeleton.css">
+    <link rel="stylesheet" href="../pages/css/style.css">
     <title>Login</title>
   </head>
   <body>
-    <!-- landing page (i.e. login) -->
-    <center><h1>Login</h1></center>
-
-    <form action="/welcome" method="POST">
-    <!-- <form> -->
-
-      <div class="container">
-        <label>Username: </label>
-        <input type="text" placeholder="Enter Username" id="username" name="username" required>
-        <label>Password: </label>
-        <input type="password" placeholder="Enter Password" id="password" name="password" required><br>
-        <button id="login" type="submit">Login</button>
-        <a href="/register">Register</a>
+    <div class="container">
+      <div class="row">
+        <h1 class="center">Login</h1>
+        <form action="/welcome" method="POST">
+          <label>Username: </label>
+          <input type="text" placeholder="Enter Username" id="username" name="username" required>
+          <label>Password: </label>
+          <input type="password" placeholder="Enter Password" id="password" name="password" required><br>
+          <button id="login" type="submit">Login</button>
+          <a href="/register">Register</a>
+        </form>
       </div>
-
-    </form>
+    </div>
 
     <script>
       window.sessionStorage.clear();

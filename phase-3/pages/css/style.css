@@ -1,0 +1,17 @@
+h1 {
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+.vertical {
+    display: flex;
+    flex-direction: column;
+}
+
+form a, .vertical a, .vertical h5 {
+    text-align: center;
+}
