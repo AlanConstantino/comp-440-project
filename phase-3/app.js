@@ -10,7 +10,6 @@ const port = 3000;
 const bodyParser = require('body-parser'); // parses body of http request
 const INITIALIZE_DATA_FILE = 'schema-and-data.sql';
 const mysql = require('mysql');
-const { resolve } = require('path');
 const database = mysql.createConnection({
     host: '127.0.0.1',
     user: 'user',
@@ -35,8 +34,8 @@ const db = {
     // gets all blogs/posts ever posted
     getPosts: () => {
         return new Promise((resolve, reject) => {
-            const allPosts = 'SELECT * FROM blog ORDER BY idBlog DESC';
-            database.query(allPosts, (error, data) => {
+            const sql = 'SELECT * FROM blog ORDER BY idBlog DESC';
+            database.query(sql, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
@@ -49,8 +48,8 @@ const db = {
     // returns the tags of whichever blog it's associated with given its id
     getTags: (idBlog) => {
         return new Promise((resolve, reject) => {
-            const getAllTags = 'SELECT * FROM tag WHERE idBlog = ?';
-            database.query(getAllTags, idBlog, (error, data) => {
+            const sql = 'SELECT * FROM tag WHERE idBlog = ?';
+            database.query(sql, idBlog, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
@@ -63,8 +62,8 @@ const db = {
     // returns the rating value of a specific blog given the blog's id
     getRating: (idBlog) => {
         return new Promise((resolve, reject) => {
-            const rating = 'SELECT rate FROM blog WHERE idBlog = ?';
-            database.query(rating, idBlog, (error, data) => {
+            const sql = 'SELECT rate FROM blog WHERE idBlog = ?';
+            database.query(sql, idBlog, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
@@ -77,13 +76,108 @@ const db = {
     // and are returned in descending order by the id of the comment
     getComments: (idBlog) => {
         return new Promise((resolve, reject) => {
-            const allCommentsOfBlog = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idComment DESC';
-            database.query(allCommentsOfBlog, idBlog, (error, data) => {
+            const sql = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idComment DESC';
+            database.query(sql, idBlog, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
                 }
                 resolve(data);
+            });
+        });
+    },
+    // update existing rating to new rating passed in alongside the blog's id
+    updateRating: (rating, idBlog) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'UPDATE blog SET rate = ? WHERE idBlog = ?';
+            const values = [rating, idBlog];
+            database.query(sql, values, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // get user info based on their id
+    getUser: (uid) => {
+        return new Promise((resolve, reject) => {
+            // const sql = 'SELECT * FROM user WHERE user.idUser = ?';
+            const sql = 'SELECT idUser, username, firstName, lastName, email FROM user WHERE user.idUser = ?';
+            database.query(sql, uid, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // get the user id of the person who just commented based on their username
+    getIdOfUsername: (username) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT idUser FROM user WHERE username = ?';
+            database.query(sql, username, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // returns the user's user id of whoever wrote a particular blog based
+    // on the blog's id
+    getUserIdOfBlog: (idBlog) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT idUser FROM blog WHERE idBlog = ?';
+            database.query(sql, idBlog, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    login: (username, password) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT * FROM user WHERE username = ?';
+            database.query(sql, username, (error, data) => {
+                if (error) {
+                    reject(error)
+                    return;
+                }
+        
+                const userFound = data.length > 0;
+                if (!userFound) {
+                    reject({error: 'Username does not exist.'});
+                    return;
+                }
+        
+                // parsing user data to JSON object
+                const parsedUserData = Object.values(JSON.parse(JSON.stringify(data)))[0];
+                const passwordsMatch = parsedUserData.password === password;
+                if (!passwordsMatch) {
+                    reject({error: 'Passwords do not match.'});
+                    return;
+                }
+
+                resolve(data);
+            });
+        });
+    },
+    register: (user) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'INSERT INTO user SET ?';
+            database.query(sql, user, (error, result) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+        
+                resolve(result);
             });
         });
     },
@@ -152,33 +246,34 @@ app.get('/rating/:idBlog', async (req, res) => {
 });
 
 // for updating the rating column of the blog table with a specific blog id
-app.put('/rating', (req, res) => {
+app.put('/rating', async (req, res) => {
     if (!req.body.rating || !req.body.idBlog) {
-        res.status(400).send({error: 'Error: No new rating and/or blog id passed as a body parameter.'});
+        res.status(400).send({status: 'error', error: 'Error: No new rating and/or blog id passed as a body parameter.'});
         return;
     }
 
-    // insert into database new rating
-    const updateRatingSQL = 'UPDATE blog SET rate = ? WHERE idBlog = ?';
-    const updateValues = [req.body.rating, req.body.idBlog];
-    database.query(updateRatingSQL, updateValues, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
-        }
-
+    try {
+        const data = await db.updateRating(req.body.rating, req.body.idBlog);
         res.status(200).send({status: 'success', data});
-    });
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
 // add the comment to the database
-app.post('/insert-comment/:idBlog/', (req, res) => {
+app.post('/insert-comment/:idBlog/', async (req, res) => {
     // idBlog is the id of the post you're commenting on
     if (!req.params.idBlog || !req.body.description || !req.body.username) {
         res.status(400).send({error: 'Error: ID blog, username, or description are empty.'});
         return;
     }
+
+    // try {
+    //     const uid = await db.getIdOfUsername(req.body.username);
+    //     const d = await db.getUserIdOfBlog(uid);
+    // } catch (error) {
+    //     res.status(400).send({status: 'error', error});
+    // }
 
     // get the user id of the person who just commented based on their username
     const getIdOfUserWhoCommented = 'SELECT idUser FROM user WHERE username = ?';
@@ -289,22 +384,18 @@ app.get('/tags/:idBlog', async (req, res) => {
 
 // returns data about a specific user from their id
 // CONVERT TO GET REQUEST
-app.post('/user/:id', (req, res) => {
+app.post('/user/:id', async (req, res) => {
     if (!req.params.id) {
         res.status(400).send({error: 'Error: No ID passed in.'});
         return;
     }
 
-    const userData = 'SELECT idUser, username FROM user WHERE user.idUser = ?';
-    database.query(userData, req.params.id, (error, data) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
-        }
-
-        res.status(200).send({status: 'success', data})
-    });
+    try {
+        const data = await db.getUser(req.params.id);
+        res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
 // handling user login
@@ -390,37 +481,25 @@ app.post('/create-post', (req, res) => {
 });
 
 // handling user login
-app.post('/welcome', (req, res) => {
-    const sql = 'SELECT * FROM user WHERE username = ?';
-    database.query(sql, req.body.username, (error, userData) => {
-        if (error) {
-            console.log(error);
-            res.status(400).send({error: `SQL ERROR: ${error}`});
-            return;
+app.post('/welcome', async (req, res) => {
+    if (!req.body.username || !req.body.password) {
+        res.status(400).send({status: 'error', error: 'Username or password not passed in.'});
+        return;
+    }
+
+    try {
+        const data = await db.login(req.body.username, req.body.password);
+        if (data) {
+            res.sendFile(path.join(__dirname, 'pages/welcome.html'));
+        } else {
+            res.status(400).send({status: 'error', error: data});
         }
-
-        const userFound = userData.length > 0;
-        if (!userFound) {
-            res.status(400).send({error: "Username does not exist."});
-            return;
-        }
-
-        // parsing user data to JSON object
-        const parsedUserData = Object.values(JSON.parse(JSON.stringify(userData)))[0];
-
-        const passwordsMatch = parsedUserData.password === req.body.password;
-        if (!passwordsMatch) {
-            res.status(400).send({error: "Password does not match."});
-            return;
-        }
-
-        // if above condition aren't satisfied (meaning username is found and passwords match)
-        // then redirect to welcome page
-        res.sendFile(path.join(__dirname, 'pages/welcome.html'));
-    });
+    } catch(error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
-app.post('/register', (req, res) => {
+app.post('/register', async (req, res) => {
     if (!validRegistrationData(req)) {
         res.status(400).send({error: "One or more fields are empty or invalid."});
         return;
@@ -439,16 +518,17 @@ app.post('/register', (req, res) => {
         lastName: req.body.lastName,
         email: req.body.email
     }
-    const sql = 'INSERT INTO user SET ?';
-    database.query(sql, user, (error, result) => {
-        if (error) {
-            res.status(400).send({error: error.sqlMessage});
-            return;
-        }
 
-        console.log('Succesfully inserted user into database.');
-        res.sendFile(path.join(__dirname, 'pages/welcome.html'));
-    });
+    try {
+        const data = await db.register(user);
+        if (data) {
+            res.sendFile(path.join(__dirname, 'pages/welcome.html'));
+        } else {
+            res.status(400).send({status: 'error', error: data});
+        }
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
 });
 
 app.post('/initialize', (req, res) => {
@@ -481,5 +561,3 @@ app.post('/logout', (req, res) => {
 app.listen(port, () => {
     console.log(`Server started on port ${port}.\nGo to localhost:${port} to view webpage.`)
 });
-
-module.exports = { database }
