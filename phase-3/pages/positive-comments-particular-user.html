@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../pages/css/normalize.css">
+    <link rel="stylesheet" href="../pages/css/skeleton.css">
+    <link rel="stylesheet" href="../pages/css/style.css">
+    <title>Advanced Filtering</title>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <h2>List All Blogs of Some User Such That Their Comments Are Positive</h2>
+            <div>
+                <label for="usernames">Select a Username:</label>
+                <select name="usernames" id="usernames"></select>
+                <br>
+                <button id="submit">Submit</button>
+            </div>
+            <div id="message"></div>
+        </div>
+    </div>
+    <script>
+        // populate the select dropdown menu with the usernames of all users
+        // from the database
+        fetch('/users')
+            .then((res) => res.json())
+            .then((data) => {
+                const usernamesEl = document.getElementById('usernames');
+                if (data.status === 'success') {
+                    data.data.forEach((element) => {
+                        const optionEl = document.createElement('option');
+                        optionEl.value = optionEl.innerText = element.username;
+                        optionEl.id = element.username;
+                        optionEl.setAttribute('iduser', element.idUser);
+                        usernamesEl.appendChild(optionEl);
+                    });
+                }
+            });
+        
+        document.getElementById('submit').addEventListener('click', async () => {
+            // send another fetch request to retrieve the blogs
+            // such that all blogs retrieved have positive comments
+            const selectEl = document.getElementById('usernames');
+            const optionEl = document.getElementById(`${selectEl.value}`);
+            const idUser = optionEl.getAttribute('iduser');
+            const messageEl = document.getElementById('message');
+            const data = await fetch(`/blogs-with-positive-comments/${idUser}`).then(res => res.json());
+
+            if (data.status === 'error') {
+                messageEl.innerText = data.data;
+            } else {
+                // if the message container contains any children, remove them
+                while (messageEl.firstChild) {
+                    messageEl.removeChild(messageEl.firstChild);
+                }
+
+                // populate the message container with all the posts of the user
+                // which have positive comments
+                data.data.forEach((element) => {
+                    console.log(element);
+                    const {date, subject, description} = element;
+                    const dateEl = document.createElement('p');
+                    const subjectEl = document.createElement('p');
+                    const descriptionEl = document.createElement('p');
+
+                    dateEl.innerText = 'Date: ' + date;
+                    subjectEl.innerText = 'Subject: ' + subject;
+                    descriptionEl.innerText = 'Description: ' + description;
+
+                    messageEl.appendChild(subjectEl);
+                    messageEl.appendChild(dateEl);
+                    messageEl.appendChild(descriptionEl);
+                    messageEl.appendChild(document.createElement('hr'));
+                });
+            }
+            // console.log(data);
+            
+        });
+    </script>
+</body>
+</html>

@@ -15,6 +15,16 @@
       <div class="row">
         <h1>Register</h1>
         <form action="/register" method="POST">
+          <label for="hobby">Hobby:</label>
+          <select name="hobby" id="hobby">
+            <option value="hiking">Hiking</option>
+            <option value="swimming">Swimming</option>
+            <option value="calligraphy">Calligraphy</option>
+            <option value="bowling">Bowling</option>
+            <option value="movie">Movie</option>
+            <option value="cooking">Cooking</option>
+            <option value="dancing">Dancing</option>
+          </select>
           <label>Username: </label>
           <input id="username" type="text" placeholder="Enter Username" name="username" required>
           <label>Password: </label>

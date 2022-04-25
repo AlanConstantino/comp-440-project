@@ -19,10 +19,10 @@
                 <form>
                     <label for="description">Comment: </label><br>
                     <textarea name="description" id="description" cols="30" rows="10"></textarea><br>
-                    <label for="rating">Rating:</label>
-                    <select name="rating" id="rating">
-                        <option value="positive">Positive (+1)</option>
-                        <option value="negative">Negative (-1)</option>
+                    <label for="sentiment">Rating:</label>
+                    <select name="sentiment" id="sentiment">
+                        <option value="1">Positive (1)</option>
+                        <option value="0">Negative (0)</option>
                     </select><br>
                     <button id="post" type="submit">Post</button>
                     <a id="back" href="http://localhost:3000/welcome">Go back</a>
@@ -54,7 +54,8 @@
         
                 const description = document.getElementById('description').value;
                 const username = sessionStorage.getItem('username');
-                const bodyData = { description, username };
+                const sentiment = parseInt(document.getElementById('sentiment').value);
+                const bodyData = { description, username, sentiment };
         
                 const insertCommentOptions = {
                     method: 'POST',
@@ -65,32 +66,13 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // send another fetch request about the rating
-                        fetch(`/rating/${blogId}`, {method: 'GET'})
-                            .then(res => res.json())
-                            .then(data => {
-                                let currentRate = parseInt(data.data[0].rate);
-                                const ratingEl = document.getElementById('rating').value;
-                                if (ratingEl === 'positive') {
-                                    currentRate++;
-                                } else {
-                                    currentRate--;
-                                }
-        
-                                const ratingOptions = {
-                                    method: 'PUT',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        rating: currentRate,
-                                        idBlog: blogId
-                                    })
-                                };
-        
-                                // insert the "currentRate" into the database
-                                fetch('/rating', ratingOptions)
-                                    .then(res => res.json())
-                                    .then(data => console.log(data));
-                        });
+                        const url = window.location.href.split('/');
+                        const newUrl = `${url[0]}//${url[2]}/welcome`;
+                        window.location.href = newUrl;
+                    }
+
+                    if (data.status === 'error') {
+                        document.getElementById('message').innerText = data.error;
                     }
                 });
             });

@@ -22,20 +22,106 @@
             <button id="initialize" type="button">Initialize Database</button>
             <button id="logout" type="button">Logout</button>
           </div>
+          <hr>
+          <div class="vertical">
+            <!-- <h1>Filters</h1> -->
+            <h5>Basic Filtering</h5>
+            <a href="/positive-comments-particular-user">List All Blogs of Some User Such That Their Comments Are Positive</a>
+            <button id="common-hobby" type="button">List Pairs of Users Who Share a Common Hobby</button>
+            <button id="never-blog" type="button">List Users Who Never Posted a Blog/Post</button>
+            <button id="never-comment" type="button">List Users Who Never Posted a Comment</button>
+            <button id="negative-comments" type="button">List Users Who Posted Some Comments but Each Is Negative</button>
+            <button id="positive-comments" type="button">List Users Who Posted Blogs With Positive Comments</button>
+            <div id="users-container">Usernames: <span id="users"></span></div>
+            <div id="hobbies-container">
+            </div>
+          </div>
           <hr><h1>All Posts</h1><hr>
+          <div id="alert"></div>
           <div id="posts-container"></div>
         </div>
       </div>
     </div>
   </body>
   <script>
+    document.getElementById('users-container').hidden = true;
+    document.getElementById('hobbies-container').hidden = true;
     // if the user is not logged in, let them know
     if (!window.sessionStorage.getItem('username')) {
+      document.getElementById('content').hidden = true;
       const divMessage = document.getElementById('message');
       divMessage.innerHTML = 'You are NOT logged in! <br> Click <a href="/">here</a> to login.<br><br>';
-      document.getElementById('content').hidden = true;
     } else {
-      // document.getElementById('content').hidden = false;
+      const usersContainer = document.getElementById('users-container');
+      const usersEl = document.getElementById('users');
+      const usersContainerEl = document.getElementById('users-container');
+      const hobbiesContainerEl = document.getElementById('hobbies-container');
+      
+      let hasAlreadyBeenClicked = false;
+      // button listeners for the filter buttons
+      document.getElementById('common-hobby').addEventListener('click', async () => {
+        hobbiesContainerEl.hidden = false;
+        usersContainerEl.hidden = true;
+        const rawData = await fetch('/common-hobby').then((res) => res.json());
+
+        if (rawData.status === 'success' && hasAlreadyBeenClicked === false) {
+          const ulEl = document.createElement('ul');
+          const titleEl = document.createElement('h5');
+          titleEl.innerText = 'Pairs of Users Sharing the Same Hobbies';
+          ulEl.appendChild(titleEl);
+          for (const key in rawData.data) {
+            const liEl = document.createElement('li');
+            const tupleString = `${key}: (${rawData.data[key]})`;
+            liEl.innerText = tupleString;
+            ulEl.appendChild(liEl);
+          }
+
+          hobbiesContainerEl.appendChild(ulEl);
+          hasAlreadyBeenClicked = true;
+        }
+      });
+
+      // list users who never posted a blog/post
+      document.getElementById('never-blog').addEventListener('click', async () => {
+        const data = await fetch('/never-blog').then((response) => response.json());
+        if (data.status === 'success') {
+          usersContainerEl.hidden = false;
+          hobbiesContainerEl.hidden = true;
+          const usernames = data.data.map((element) => element.username);
+          usersEl.innerText = usernames;
+        }
+      });
+      // list users who bever posted a comment
+      document.getElementById('never-comment').addEventListener('click', async () => {
+        const data = await fetch('/never-comment').then((response) => response.json());
+        if (data.status === 'success') {
+          hobbiesContainerEl.hidden = true;
+          usersContainerEl.hidden = false;
+          const usernames = data.data.map((element) => element.username);
+          usersEl.innerText = usernames;
+        }
+      });
+      // list users who posted some comments but each is negative
+      document.getElementById('negative-comments').addEventListener('click', async () => {
+        const data = await fetch('/users-with-negative-comments').then((response) => response.json());
+        if (data.status === 'success') {
+          hobbiesContainerEl.hidden = true;
+          usersContainerEl.hidden = false;
+          const usernames = data.data;
+          usersEl.innerText = usernames;
+        }
+      });
+      // list users who posted blogs with positive comments
+      document.getElementById('positive-comments').addEventListener('click', async () => {
+        const data = await fetch('/users-with-positive-comments').then((response) => response.json());
+        if (data.status === 'success') {
+          hobbiesContainerEl.hidden = true;
+          usersContainerEl.hidden = false;
+          const usernames = data.data;
+          usersEl.innerText = usernames;
+        }
+      });
+
       const usernameEl = document.getElementById('username');
       usernameEl.innerText = sessionStorage.getItem('username');
       // populates the 'posts-container' div
@@ -44,68 +130,48 @@
         .then((data) => {
           const postsContainer = document.getElementById('posts-container');
   
-          data.data.forEach((item) => {
+          data.data.forEach(async (item) => {
             // for comment
             const commentContainer = document.createElement('div');
             const commentTitle = document.createElement('h4');
+            const comments = document.createElement('div');
+            comments.setAttribute('id', `${item.idBlog}-blog`)
             commentTitle.innerText = 'Comments';
-            const comment = document.createElement('p');
-            const usernameOfComment = document.createElement('p');
+            commentContainer.appendChild(commentTitle);
+            commentContainer.appendChild(comments);
   
             // for post
             const subject = document.createElement('h3');
             const tags = document.createElement('p');
-            tags.innerText = "Tags: ";
             const rate = document.createElement('p');
             const description = document.createElement('p');
             const date = document.createElement('p');
             const user = document.createElement('p');
             const createCommentLink = document.createElement('a');
+            const followLink = document.createElement('a');
+
+            tags.innerText = "Tags: ";
             createCommentLink.innerText = 'Comment on this post';
             createCommentLink.href = `./create-comment/${item.idBlog}`;
-          
-          fetch(`/tags/${item.idBlog}`)
-            .then(res => res.json())
-            .then(data => {
-              data.data.forEach(item => {
-                tags.innerText += ` ${item.tagName} `;
-                // console.log(item.tagName);
-              });
-            });
-  
-          // fetch request to get data about user (i.e. their id and username)
-          fetch(`/user/${item.idUser}`, {method: 'POST'})
-            .then(response => response.json())
-            .then(res => user.innerText = 'by ' + res.data[0].username);
+            followLink.innerText = 'Follow';
+            followLink.href = `./follow/${item.idUser}`;
+
+            commentContainer.appendChild(followLink);
+            commentContainer.appendChild(document.createElement('br'));
+            commentContainer.appendChild(createCommentLink);
+            commentContainer.appendChild(document.createElement('hr'));
+
+            const tagsRaw = await fetch(`/tags/${item.idBlog}`).then((res) => res.json());
+            tagsRaw.data.forEach((item) => tags.innerText += `${item.tagName} `);
+
+            const userRaw = await fetch(`/user/${item.idUser}`, {method: 'POST'}).then((res) => res.json());
+            userRaw.data.forEach((item) => user.innerText = 'by ' + item.username);
     
             subject.innerText = 'Subject: ' + item.subject;
             description.innerText = 'Description: ' + item.description;
             date.innerText = 'Date: ' + item.date;
             rate.innerText = 'Rate: ' + item.rate;
-  
-            // fetch request to get comments associated with each post
-            fetch(`/comments/${item.idBlog}`, {method: 'POST'})
-              .then(response => response.json())
-              .then(res => {
-                if (!res.data[0]) {
-                  comment.innerText = 'Comment: No comments.';
-                } else {
-                  comment.innerText = 'Comment: ' + res.data[0].description;
-                }
-  
-                // fetch request to get the user's username associated with the comment
-                fetch(`/user/${res.data[0].idUser}`, {method: 'POST'})
-                  .then(response => response.json())
-                  .then(res => {
-                    // console.log(res.data[0].username);
-                    usernameOfComment.innerHTML = `<i>Comment by</i> <b>${res.data[0].username}</b>`;
-                  });
-              });
-            
-            // for comment
-            commentContainer.appendChild(comment);
-            commentContainer.appendChild(usernameOfComment);
-  
+
             // for post
             postsContainer.appendChild(subject);
             postsContainer.appendChild(description);
@@ -113,13 +179,38 @@
             postsContainer.appendChild(rate);
             postsContainer.appendChild(date);
             postsContainer.appendChild(user);
-            postsContainer.appendChild(commentTitle);
+
+            // commentContainer
             postsContainer.appendChild(commentContainer);
-            postsContainer.appendChild(createCommentLink);
-            postsContainer.appendChild(document.createElement('hr'));
+
+            // fetches all raw data of comments associated with the idBlog
+            const commentsRaw = await fetch(`/comments/${item.idBlog}`, {method: 'POST'}).then((res) => res.json());
+            const container = document.createElement('div');
+
+            // defining what the comment will display
+            for (let i = 0; i < commentsRaw.data.length; i++) {
+              const commentEl = document.createElement('p');
+              const sentimentEl = document.createElement('p');
+              const dateEl = document.createElement('p');
+
+              const usernameRaw = await fetch(`/user/${commentsRaw.data[i].idUser}`, {method: 'POST'}).then((res) => res.json());
+              const comment = `${usernameRaw.data[0].username}: ${commentsRaw.data[i].description}`;
+              // const sentiment = `Sentiment: ${commentsRaw.data[i].sentiment}`;
+              // const date = `Date: ${commentsRaw.data[i].date.toString()}`;
+
+              commentEl.innerText = comment;
+              // sentimentEl.innerText = sentiment;
+              // dateEl = date;
+              container.appendChild(commentEl);
+              // container.appendChild(sentimentEl);
+              // container.appendChild(dateEl);
+            }
+
+            const elToAppendTo = document.getElementById(`${item.idBlog}-blog`);
+            elToAppendTo.appendChild(container);
           });
         });
-  
+      
       // initialize button functionality
       const initializeButton = document.getElementById('initialize');
       initializeButton.addEventListener('click', (e) => {
@@ -133,8 +224,6 @@
           .then(response => response.json())
           .then(data => {
             const message = document.getElementById('message');
-            console.log(data.message);
-            message.textContent = data.message;
           });
       });
   
@@ -147,8 +236,6 @@
           method: 'POST'
         }
         fetch('/logout', options)
-          .then(response => console.log(response));
-        
         window.location.href = '/';
       });
     }

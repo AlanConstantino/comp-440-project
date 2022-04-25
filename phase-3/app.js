@@ -77,7 +77,7 @@ const db = {
     // and are returned in descending order by the id of the comment
     getComments: (idBlog) => {
         return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idComment DESC';
+            const sql = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idBlog DESC';
             database.query(sql, idBlog, (error, data) => {
                 if (error) {
                     reject(error);
@@ -210,10 +210,10 @@ const db = {
             });
         });
     },
-    insertComment: (idUser, description, idBlog) => {
+    insertComment: (idUser, description, idBlog, sentiment) => {
         return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO comment (idUser, date, description, idBlog) VALUES (?, CURDATE(), ?, ?)';
-            const values = [idUser, description, idBlog];
+            const sql = 'INSERT INTO comment (idUser, date, description, idBlog, sentiment) VALUES (?, CURDATE(), ?, ?, ?)';
+            const values = [idUser, description, idBlog, sentiment];
             database.query(sql, values, (error, data) => {
                 if (error) {
                     reject(error);
@@ -238,6 +238,105 @@ const db = {
             });
         });
     },
+    getIdsOfAllUsersWhoHaveBlog: () => {
+        return new Promise((resolve, reject) => {
+            // all user id's who posted a blog
+            const sql = 'SELECT DISTINCT idUser from blog';
+            database.query(sql, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // have to feed it the ids of the users who have posted
+    // ids: array of id integers
+    getIdsOfUsersWhoHaveNotPosted: (ids) => {
+        return new Promise((resolve, reject) => {
+            let sql = 'SELECT DISTINCT idUser from user WHERE ';
+            const condition = 'idUser != ?';
+            ids.forEach((id, i) => {
+                sql += condition;
+                if (i !== ids.length - 1) {
+                    sql += ' AND '; 
+                }
+            });
+
+            database.query(sql, ids, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // returns a list of ids all users who have commented
+    getIdsOfAllCommentors: () => {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT DISTINCT idUser from comment';
+            database.query(sql, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // returns a list of ids of users who are not on the passed in
+    // list of given ids
+    // ids: array of id integers
+    // i.e. [1, 2, 3, ...]
+    getIdsOfUsersNotOnList: (ids) => {
+        return new Promise((resolve, reject) => {
+            let sql = 'SELECT DISTINCT idUser from user WHERE ';
+            const condition = 'idUser != ?';
+            ids.forEach((id, i) => {
+                sql += condition;
+                if (i !== ids.length - 1) {
+                    sql += ' AND '; 
+                }
+            });
+
+            database.query(sql, ids, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // returns the sentiment (1 = positive, 0 = negative) of a particualr comment
+    // based off of the comment's id
+    getSentimentOfComment: (idComment) => {
+        return new Promise((resolve, reject) => {
+            const sql = 'SELECT sentiment FROM comment WHERE idComment = ?';
+            database.query(sql, idComment, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    },
+    // sql: string of the SQL statement to execute
+    // values (can be empty): array of values that's associated with SQL statement
+    perform: (sql, values) => {
+        return new Promise((resolve, reject) => {
+            database.query(sql, values, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+                resolve(data);
+            });
+        });
+    }
 };
 
 // helper functions to validate if string is valid
@@ -254,6 +353,7 @@ function isValidString(input) {
 // i.e. checks string to see if not empty, null, or undefined
 function validRegistrationData(req) {
     if (
+        !isValidString(req.body.hobby) ||
         !isValidString(req.body.username) ||
         !isValidString(req.body.password) ||
         !isValidString(req.body.confirmPassword) ||
@@ -292,10 +392,238 @@ app.get('/create-comment/:idBlog', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/create-comment.html'));
 });
 
+app.get('/positive-comments-particular-user', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages/positive-comments-particular-user.html'));
+});
+
+app.get('/blogs-with-positive-comments/:idUser', async (req, res) => {
+    try {
+        if (!req.params.idUser) {
+            res.status(400).send({status: 'error', error: 'No parameter idBlog passed in.'});
+            return;
+        }
+
+        // get all ids of blogs posted by the user
+        const sql = 'SELECT idBlog FROM blog WHERE idUser = ?';
+        const values = [req.params.idUser];
+        const data1 = await db.perform(sql, values);
+        if (data1.length === 0) {
+            res.status(200).send({status: 'error', data: 'User has not posted a blog yet.'});
+            return;
+        }
+
+        const blogIds = data1.map((item) => item.idBlog);
+        const set = new Set([]);
+
+        for (let i = 0; i < blogIds.length; i++) {
+            const sql = 'SELECT idBlog, idComment FROM comment WHERE sentiment = 1 AND idBlog = ?';
+            const data = await db.perform(sql, blogIds[i]);
+            data.forEach((item) => set.add(item.idBlog));
+        }
+
+        const positiveCommentedBlogIds = [...set];
+
+        const data = [];
+        // iterate through the set of positive commented blog ids and fetch their blog data
+        for (let i = 0; i < positiveCommentedBlogIds.length; i++) {
+            const sql = 'SELECT subject, description, date FROM blog WHERE idBlog = ?';
+            const values = [positiveCommentedBlogIds[i]];
+            const response = await db.perform(sql, values);
+            data.push(response[0]);
+        }
+
+        res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+app.get('/common-hobby', async (req, res) => {
+    try {
+        const sql = 'SELECT username, hobby FROM user ORDER BY hobby';
+        const response = await db.perform(sql);
+        // hiking, swimming, calligraphy, bowling, movie, cooking, and dancing.
+        const hobbies = {};
+
+        // getting all hobbies of users and putting them into a key-value dictionary
+        response.forEach((element) => {
+            if (element.hobby in hobbies) {
+                hobbies[element.hobby].push(element.username);
+                return;
+            }
+
+            hobbies[element.hobby] = [];
+            hobbies[element.hobby].push(element.username);
+        });
+
+        // filtering old dictionary to a new dictionary which
+        // contains users who share hobbies
+        const data = {};
+        for (const key in hobbies) {
+            if (hobbies[key].length > 1) {
+                data[key] = hobbies[key];
+            }
+        }
+        res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+// returns all the ids and usernames of people who have never posted/blogged
+app.get('/never-blog', async (req, res) => {
+    try {
+        // ids is an array of objects that contain the property idUser
+        // i.e. [{idUser: ?}, {idUser: ?}, ...]
+        const postersData = await db.getIdsOfAllUsersWhoHaveBlog();
+        const idsOfPosters = postersData.map((element) => element.idUser);
+
+        const idsData = await db.getIdsOfUsersNotOnList(idsOfPosters);
+        const ids = idsData.map((element) => element.idUser);
+
+        const data = [];
+        for (let i = 0; i < ids.length; i++) {
+            const user = await db.getUser(ids[i]);
+            data.push({id: user[0].idUser, username: user[0].username});
+        }
+
+        res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+// returns all the ids and usernames of people who have never commented
+app.get('/never-comment', async (req, res) => {
+    try {
+        // getting ids of people who have commented
+        const idsOfCommentorsRawData = await db.getIdsOfAllCommentors();
+        const idsOfCommentors = idsOfCommentorsRawData.map((element) => element.idUser);
+
+        // getting ids of people who have not commented based on previous list
+        const idsOfUsersWhoNeverCommentedRawData = await db.getIdsOfUsersNotOnList(idsOfCommentors);
+        const idsOfUsersWhoNeverCommented = idsOfUsersWhoNeverCommentedRawData.map((element) => element.idUser);
+
+        const data = [];
+        for (let i = 0; i < idsOfUsersWhoNeverCommented.length; i++) {
+            const user = await db.getUser(idsOfUsersWhoNeverCommented[i]);
+            data.push({id: user[0].idUser, username: user[0].username});
+        }
+
+        res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+app.get('/users-with-positive-comments', async (req, res) => {
+    try {
+        // get idBlog's of all positive and negative comments
+        const idOfBlogSentiment0 = 'SELECT DISTINCT idBlog FROM comment WHERE sentiment = 0';
+        const idOfBlogSentiment1 = 'SELECT DISTINCT idBlog FROM comment WHERE sentiment = 1';
+        const idBlogOfNegativeComments = await db.perform(idOfBlogSentiment0);
+        const idBlogOfPositiveComments = await db.perform(idOfBlogSentiment1);
+
+        // converting array of object into a simple array containing ids
+        const positive = idBlogOfPositiveComments.map((element) => element.idBlog);
+        const negative = idBlogOfNegativeComments.map((element) => element.idBlog);
+
+        const blogIds = [];
+
+        // get the ids of blogs who only contain positive comments
+        for (let i = 0; i < positive.length; i++) {
+            if (!negative.includes(positive[i])) {
+                blogIds.push(positive[i]);
+            }
+        }
+
+        // gets the user id from a blog id and stores all the user ids
+        // into an array
+        const uidsRaw = [];
+        const sql = 'SELECT DISTINCT idUser FROM blog WHERE idBlog = ?';
+        for (let i = 0; i < blogIds.length; i++) {
+            const rawData = await db.perform(sql, blogIds[i]);
+            uidsRaw.push(rawData);
+        }
+
+        // gets only the ids of each object and stores it as an array
+        const uids = uidsRaw.map((element) => element[0].idUser);
+        
+        // converting uids to usernames and inserting them into a set
+        // to not have duplicate usernames
+        const usernames = new Set([]);
+        for (let i = 0; i < uids.length; i++) {
+            const sql = 'SELECT username FROM user WHERE idUser = ?';
+            const data = await db.perform(sql, uids[i]);
+            usernames.add(data[0].username);
+        }
+
+        res.status(200).send({status: 'success', data: [...usernames]});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+app.get('/users-with-negative-comments', async (req, res) => {
+    try {
+        // get idBlog's of all positive and negative comments
+        // 0 = negative
+        // 1 = positive
+        const sql1 = 'SELECT DISTINCT idUser FROM comment WHERE sentiment = 0';
+        const userIdsRaw = await db.perform(sql1);
+
+        // list of usernames we're going to return
+        // is a set because we don't want duplicate usernames
+        const usernames = new Set([]);
+
+        // converting array of object into a simple array containing ids
+        const userIds = userIdsRaw.map((element) => element.idUser);
+
+        // get the usernames associated with the ids of the user
+        const sql2 = 'SELECT username FROM user WHERE idUser = ?';
+        for (let i = 0; i < userIds.length; i++) {
+            const usernamesRaw = await db.perform(sql2, userIds[i]);
+            usernames.add(usernamesRaw[0].username);
+        }
+
+        res.status(200).send({status: 'success', data: [...usernames]});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+// get the sentiment of the comment given the comment's id
+app.get('/sentiment/:idComment', async (req, res) => {
+    if (!req.params.idComment) {
+        res.status(400).send({status: 'error', error: 'Error: No comment id passed as a parameter.'});
+        return;
+    }
+    
+    // positive = 1
+    // negative = 0
+    try {
+        const rawData = await db.getSentimentOfComment(req.params.idComment);
+        const value = rawData[0].sentiment;
+        const data = [];
+        // if value is 1, sentiment is positive
+        if (value === 1) {
+            data.push({sentiment: 'positive', value});
+        }
+        // if value is anything other than 1, sentiment is negative
+        else {
+            data.push({sentiment: 'negative', value});
+        }
+        
+        res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
 // return the rating of the blog based on the blog's id
 app.get('/rating/:idBlog', async (req, res) => {
     if (!req.params.idBlog) {
-        res.status(400).send({error: 'Error: No blog id passed as a body parameter.'});
+        res.status(400).send({status: 'error', error: 'Error: No blog id passed as a parameter.'});
         return;
     }
     
@@ -323,7 +651,7 @@ app.put('/rating', async (req, res) => {
 });
 
 // add the comment to the database
-app.post('/insert-comment/:idBlog/', async (req, res) => {
+app.post('/insert-comment/:idBlog', async (req, res) => {
     // idBlog is the id of the post you're commenting on
     if (!req.params.idBlog || !req.body.description || !req.body.username) {
         res.status(400).send({error: 'Error: ID blog, username, or description are empty.'});
@@ -353,7 +681,7 @@ app.post('/insert-comment/:idBlog/', async (req, res) => {
         }
 
         // insert comment into database
-        await db.insertComment(idOfCommentor, req.body.description, req.params.idBlog);
+        await db.insertComment(idOfCommentor, req.body.description, req.params.idBlog, req.body.sentiment);
         res.status(200).send({status: 'success', data: 'Comment inserted succesfully!'});
         // res.status(200).send({status: 'success', data});
     } catch (error) {
@@ -402,6 +730,17 @@ app.get('/tags/:idBlog', async (req, res) => {
     try {
         const data = await db.getTags(req.params.idBlog);
         res.status(200).send({status: 'success', data})
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+// return the username and id of all users
+app.get('/users', async (req, res) => {
+    try {
+        const sql = 'SELECT idUser, username from user';
+        const data = await db.perform(sql);
+        res.status(200).send({status: 'success', data});
     } catch (error) {
         res.status(400).send({status: 'error', error});
     }
@@ -486,6 +825,7 @@ app.post('/register', async (req, res) => {
     }
     
     const user = {
+        hobby: req.body.hobby,
         username: req.body.username,
         password: req.body.password,
         firstName: req.body.firstName,
