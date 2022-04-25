@@ -224,6 +224,7 @@
           .then(response => response.json())
           .then(data => {
             const message = document.getElementById('message');
+            message.innerText = 'Successfully executed schema-and-data.sql file! Reload to see changes.'
           });
       });
   
