@@ -35,7 +35,6 @@ const db = {
     // get user info based on their id
     getUser: (uid) => {
         return new Promise((resolve, reject) => {
-            // const sql = 'SELECT * FROM user WHERE user.idUser = ?';
             const sql = 'SELECT idUser, username, firstName, lastName, email FROM user WHERE user.idUser = ?';
             database.query(sql, uid, (error, data) => {
                 if (error) {
@@ -90,18 +89,20 @@ const db = {
     // list of given ids
     // ids: array of id integers
     // i.e. [1, 2, 3, ...]
-    getIdsOfUsersNotOnList: (ids) => {
+    getIdsOfUsersNotOnList: (idList) => {
         return new Promise((resolve, reject) => {
             let sql = 'SELECT DISTINCT idUser from user WHERE ';
             const condition = 'idUser != ?';
-            ids.forEach((id, i) => {
+            // add the 'AND' string to the sql query as many times as
+            // the idList.length - 1
+            idList.forEach((id, i) => {
                 sql += condition;
-                if (i !== ids.length - 1) {
+                if (i !== idList.length - 1) {
                     sql += ' AND '; 
                 }
             });
 
-            database.query(sql, ids, (error, data) => {
+            database.query(sql, idList, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
@@ -110,8 +111,9 @@ const db = {
             });
         });
     },
-    // sql: string of the SQL statement to execute
-    // values (can be empty): array of values that's associated with SQL statement
+    // general purpose sql handler
+    // sql: string of the sql query
+    // values: array of values to go along with the sql statement
     perform: (sql, values) => {
         return new Promise((resolve, reject) => {
             database.query(sql, values, (error, data) => {
@@ -124,34 +126,6 @@ const db = {
         });
     }
 };
-
-// helper functions to validate if string is valid
-// i.e. checks string to see if not empty, null, or undefined
-function isValidString(input) {
-    return (
-        (input !== undefined) &&
-        (input !== '') &&
-        (input !== null)
-    );
-}
-
-// checks to see if registration data is valid
-// i.e. checks string to see if not empty, null, or undefined
-function validRegistrationData(req) {
-    if (
-        !isValidString(req.body.hobby) ||
-        !isValidString(req.body.username) ||
-        !isValidString(req.body.password) ||
-        !isValidString(req.body.confirmPassword) ||
-        !isValidString(req.body.firstName) ||
-        !isValidString(req.body.lastName) ||
-        !isValidString(req.body.email)
-        ) {
-        return false;
-    }
-
-    return true;
-}
 
 // index page (i.e. login page)
 app.get(['/', '/login'], (req, res) => {
@@ -476,10 +450,8 @@ app.post('/insert-comment/:idBlog', async (req, res) => {
 
         // insert comment into database
         const insertSql = 'INSERT INTO comment (idUser, date, description, idBlog, sentiment) VALUES (?, CURDATE(), ?, ?, ?)';
-        // const values = [idUser, description, idBlog, sentiment];
         await db.perform(insertSql, [idOfCommentor, req.body.description, req.params.idBlog, req.body.sentiment]);
         res.status(200).send({status: 'success', data: 'Comment inserted succesfully!'});
-        // res.status(200).send({status: 'success', data});
     } catch (error) {
         res.status(400).send({status: 'error', error});
     }
@@ -615,7 +587,7 @@ app.post('/welcome', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const validateRegistrationData = (data) => {
+    const validRegistrationData = (data) => {
         for (let i = 0; i < data.length; i++) {
             const element = data[i];
             if (element === '' || element === null || element === undefined) {
@@ -625,12 +597,10 @@ app.post('/register', async (req, res) => {
         return true;
     }
 
-    const {hobby, username, password, confirmPassword, firstName, lastName, email} = req.body;
-    const values = [hobby, username, password, confirmPassword, firstName, lastName, email];
+    const { hobby, username, password, confirmPassword, firstName, lastName, email } = req.body;
+    const values = [ hobby, username, password, confirmPassword, firstName, lastName, email ];
 
-    const isValidData = validateRegistrationData(values);
-
-    if (!isValidData) {
+    if (!validRegistrationData(values)) {
         res.status(400).send({status: 'error', error: 'One or more fields are empty or invalid'});
         return;
     }
@@ -640,14 +610,7 @@ app.post('/register', async (req, res) => {
         return;
     }
     
-    const user = {
-        hobby: req.body.hobby,
-        username: req.body.username,
-        password: req.body.password,
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email
-    }
+    const user = { hobby, username, password, firstName, lastName, email };
 
     try {
         const sql = 'INSERT INTO user SET ?';
