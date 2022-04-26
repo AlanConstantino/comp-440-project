@@ -32,75 +32,6 @@ app.use(bodyParser.json());
 app.use('/pages', express.static(path.join(__dirname, "pages")));
 
 const db = {
-    // gets all blogs/posts ever posted
-    getPosts: () => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM blog ORDER BY idBlog DESC';
-            database.query(sql, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-    
-                resolve(data);
-            });
-        });
-    },
-    // returns the tags of whichever blog it's associated with given its id
-    getTags: (idBlog) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM tag WHERE idBlog = ?';
-            database.query(sql, idBlog, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                
-                resolve(data);
-            });
-        });
-    },
-    // returns the rating value of a specific blog given the blog's id
-    getRating: (idBlog) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT rate FROM blog WHERE idBlog = ?';
-            database.query(sql, idBlog, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
-    // returns all the comments associated with the id of a certain blog
-    // and are returned in descending order by the id of the comment
-    getComments: (idBlog) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idBlog DESC';
-            database.query(sql, idBlog, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
-    // update existing rating to new rating passed in alongside the blog's id
-    updateRating: (rating, idBlog) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'UPDATE blog SET rate = ? WHERE idBlog = ?';
-            const values = [rating, idBlog];
-            database.query(sql, values, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
     // get user info based on their id
     getUser: (uid) => {
         return new Promise((resolve, reject) => {
@@ -120,20 +51,6 @@ const db = {
         return new Promise((resolve, reject) => {
             const sql = 'SELECT idUser FROM user WHERE username = ?';
             database.query(sql, username, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
-    // returns the user's user id of whoever wrote a particular blog based
-    // on the blog's id
-    getUserIdOfBlog: (idBlog) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT idUser FROM blog WHERE idBlog = ?';
-            database.query(sql, idBlog, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
@@ -169,123 +86,6 @@ const db = {
             });
         });
     },
-    register: (user) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO user SET ?';
-            database.query(sql, user, (error, result) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-        
-                resolve(result);
-            });
-        });
-    },
-    insertPost: (idUser, subject, description) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO blog (idUser, subject, description, date, rate) VALUES (?, ?, ?, CURDATE(), ?)';
-            const values = [idUser, subject, description, 0];
-            database.query(sql, values, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                
-                resolve(data);
-            });
-        });
-    },
-    insertTag: (tagName, idBlog) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO tag (tagName, idBlog) VALUES (?, ?)';
-            const values = [tagName, idBlog];
-            database.query(sql, values, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-
-                resolve(data);
-            });
-        });
-    },
-    insertComment: (idUser, description, idBlog, sentiment) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'INSERT INTO comment (idUser, date, description, idBlog, sentiment) VALUES (?, CURDATE(), ?, ?, ?)';
-            const values = [idUser, description, idBlog, sentiment];
-            database.query(sql, values, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-        
-                resolve(data);
-            });
-        });
-    },
-    // figure out how many times a particular user has commented throughout
-    // the day from their user id
-    getCommentTotal: (idUser) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT idUser, date FROM comment WHERE idUser = ? AND DATE(`date`) = CURDATE()';
-            database.query(sql, idUser, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
-    getIdsOfAllUsersWhoHaveBlog: () => {
-        return new Promise((resolve, reject) => {
-            // all user id's who posted a blog
-            const sql = 'SELECT DISTINCT idUser from blog';
-            database.query(sql, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
-    // have to feed it the ids of the users who have posted
-    // ids: array of id integers
-    getIdsOfUsersWhoHaveNotPosted: (ids) => {
-        return new Promise((resolve, reject) => {
-            let sql = 'SELECT DISTINCT idUser from user WHERE ';
-            const condition = 'idUser != ?';
-            ids.forEach((id, i) => {
-                sql += condition;
-                if (i !== ids.length - 1) {
-                    sql += ' AND '; 
-                }
-            });
-
-            database.query(sql, ids, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
-    // returns a list of ids all users who have commented
-    getIdsOfAllCommentors: () => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT DISTINCT idUser from comment';
-            database.query(sql, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
     // returns a list of ids of users who are not on the passed in
     // list of given ids
     // ids: array of id integers
@@ -302,20 +102,6 @@ const db = {
             });
 
             database.query(sql, ids, (error, data) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(data);
-            });
-        });
-    },
-    // returns the sentiment (1 = positive, 0 = negative) of a particualr comment
-    // based off of the comment's id
-    getSentimentOfComment: (idComment) => {
-        return new Promise((resolve, reject) => {
-            const sql = 'SELECT sentiment FROM comment WHERE idComment = ?';
-            database.query(sql, idComment, (error, data) => {
                 if (error) {
                     reject(error);
                     return;
@@ -475,7 +261,8 @@ app.get('/never-blog', async (req, res) => {
     try {
         // ids is an array of objects that contain the property idUser
         // i.e. [{idUser: ?}, {idUser: ?}, ...]
-        const postersData = await db.getIdsOfAllUsersWhoHaveBlog();
+        const sql = 'SELECT DISTINCT idUser from blog';
+        const postersData = await db.perform(sql);
         const idsOfPosters = postersData.map((element) => element.idUser);
 
         const idsData = await db.getIdsOfUsersNotOnList(idsOfPosters);
@@ -497,7 +284,8 @@ app.get('/never-blog', async (req, res) => {
 app.get('/never-comment', async (req, res) => {
     try {
         // getting ids of people who have commented
-        const idsOfCommentorsRawData = await db.getIdsOfAllCommentors();
+        const sql = 'SELECT DISTINCT idUser from comment';
+        const idsOfCommentorsRawData = await db.perform(sql);
         const idsOfCommentors = idsOfCommentorsRawData.map((element) => element.idUser);
 
         // getting ids of people who have not commented based on previous list
@@ -602,7 +390,8 @@ app.get('/sentiment/:idComment', async (req, res) => {
     // positive = 1
     // negative = 0
     try {
-        const rawData = await db.getSentimentOfComment(req.params.idComment);
+        const sql = 'SELECT sentiment FROM comment WHERE idComment = ?';
+        const rawData = await db.perform(sql, req.params.idComment);
         const value = rawData[0].sentiment;
         const data = [];
         // if value is 1, sentiment is positive
@@ -628,7 +417,8 @@ app.get('/rating/:idBlog', async (req, res) => {
     }
     
     try {
-        const data = await db.getRating(req.params.idBlog);
+        const sql = 'SELECT rate FROM blog WHERE idBlog = ?';
+        const data = await db.perform(req.params.idBlog);
         res.status(200).send({status: 'success', data});
     } catch(error) {
         res.status(400).send({status: 'error', error});
@@ -643,7 +433,8 @@ app.put('/rating', async (req, res) => {
     }
 
     try {
-        const data = await db.updateRating(req.body.rating, req.body.idBlog);
+        const sql = 'UPDATE blog SET rate = ? WHERE idBlog = ?';
+        const data = await db.perform(sql, [req.body.rating, req.body.idBlog]);
         res.status(200).send({status: 'success', data});
     } catch (error) {
         res.status(400).send({status: 'error', error});
@@ -660,7 +451,9 @@ app.post('/insert-comment/:idBlog', async (req, res) => {
 
     try {
         const userData = await db.getIdOfUsername(req.body.username);
-        const userOfBlog = await db.getUserIdOfBlog(req.params.idBlog);
+
+        const sql = 'SELECT idUser FROM blog WHERE idBlog = ?';
+        const userOfBlog = await db.perform(sql, req.params.idBlog);
         
         // if the id of both the person who is commenting and the person who wrote the blog
         // are the same, error out since a user can't comment on their own post/blog
@@ -671,7 +464,8 @@ app.post('/insert-comment/:idBlog', async (req, res) => {
             return;
         }
         
-        const dataOfCommentTotal = await db.getCommentTotal(idOfCommentor);
+        const sql2 = 'SELECT idUser, date FROM comment WHERE idUser = ? AND DATE(`date`) = CURDATE()';
+        const dataOfCommentTotal = await db.perform(sql2, idOfCommentor);
         const commentTotal = dataOfCommentTotal.length;
 
         // if user has already commented more than 3 or more times, error out
@@ -681,7 +475,9 @@ app.post('/insert-comment/:idBlog', async (req, res) => {
         }
 
         // insert comment into database
-        await db.insertComment(idOfCommentor, req.body.description, req.params.idBlog, req.body.sentiment);
+        const insertSql = 'INSERT INTO comment (idUser, date, description, idBlog, sentiment) VALUES (?, CURDATE(), ?, ?, ?)';
+        // const values = [idUser, description, idBlog, sentiment];
+        await db.perform(insertSql, [idOfCommentor, req.body.description, req.params.idBlog, req.body.sentiment]);
         res.status(200).send({status: 'success', data: 'Comment inserted succesfully!'});
         // res.status(200).send({status: 'success', data});
     } catch (error) {
@@ -698,7 +494,8 @@ app.post('/comments/:idBlog', async (req, res) => {
     }
 
     try {
-        const data = await db.getComments(req.params.idBlog);
+        const sql = 'SELECT * FROM comment WHERE idBlog = ? ORDER BY idBlog DESC';
+        const data = await db.perform(sql, req.params.idBlog);
         res.status(200).send({status: 'success', data})
     } catch (error) {
         res.status(400).send({status: 'error', error});
@@ -710,7 +507,8 @@ app.post('/comments/:idBlog', async (req, res) => {
 app.post('/posts', async (req, res) => {
     try {
         // get all posts from database and return them
-        const data = await db.getPosts();
+        const sql = 'SELECT * FROM blog ORDER BY idBlog DESC';
+        const data = await db.perform(sql);
         return res.status(200).send({status: 'success', data})
     } catch (e) {
         const {code, errno, sqlMessage, sql} = e;
@@ -728,7 +526,8 @@ app.get('/tags/:idBlog', async (req, res) => {
     }
 
     try {
-        const data = await db.getTags(req.params.idBlog);
+        const sql = 'SELECT * FROM tag WHERE idBlog = ?';
+        const data = await db.perform(sql, req.params.idBlog);
         res.status(200).send({status: 'success', data})
     } catch (error) {
         res.status(400).send({status: 'error', error});
@@ -777,13 +576,16 @@ app.post('/create-post', async (req, res) => {
     try {
         const userData = await db.getIdOfUsername(req.body.username);
         const idUser = userData[0].idUser;
-        const insertPost = await db.insertPost(idUser, req.body.subject, req.body.description);
+
+        const sql = 'INSERT INTO blog (idUser, subject, description, date, rate) VALUES (?, ?, ?, CURDATE(), ?)';
+        const insertPost = await db.perform(sql, [idUser, req.body.subject, req.body.description]);
         const idBlog = insertPost.insertId;
         const tags = req.body.tags;
 
         if (tags.length >= 1) {
+            const sql = 'INSERT INTO tag (tagName, idBlog) VALUES (?, ?)';
             for (let i = 0; i < tags.length; i++) {
-                await db.insertTag(tags[i], idBlog);
+                await db.perform(sql, [tags[i], idBlog]);
             }
         }
 
@@ -813,13 +615,27 @@ app.post('/welcome', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    if (!validRegistrationData(req)) {
-        res.status(400).send({error: "One or more fields are empty or invalid."});
+    const validateRegistrationData = (data) => {
+        for (let i = 0; i < data.length; i++) {
+            const element = data[i];
+            if (element === '' || element === null || element === undefined) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    const {hobby, username, password, confirmPassword, firstName, lastName, email} = req.body;
+    const values = [hobby, username, password, confirmPassword, firstName, lastName, email];
+
+    const isValidData = validateRegistrationData(values);
+
+    if (!isValidData) {
+        res.status(400).send({status: 'error', error: 'One or more fields are empty or invalid'});
         return;
     }
 
-    const passwordsMatch = req.body.password === req.body.confirmPassword;
-    if (!passwordsMatch) {
+    if (password === confirmPassword) {
         res.status(400).send({error: "Passwords do not match."});
         return;
     }
@@ -834,7 +650,8 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        const data = await db.register(user);
+        const sql = 'INSERT INTO user SET ?';
+        const data = await db.perform(sql, user);
         if (data) {
             res.sendFile(path.join(__dirname, 'pages/welcome.html'));
         } else {
