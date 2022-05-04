@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../pages/css/normalize.css">
+    <link rel="stylesheet" href="../pages/css/skeleton.css">
+    <link rel="stylesheet" href="../pages/css/style.css">
+    <title>List Users Different Tags</title>
+</head>
+<body>
+    <main class="container">
+        <div class="row">
+            <h1>List the users who post at least two blogs, one has a tag of "X", the other has a tag of "Y".</h1>
+            <div id="message"></div>
+            <form>
+                <label for="tag-one">Tag One</label>
+                <select name="tag-one" id="tag-one"></select>
+                <label for="tag-two">Tag Two</label>
+                <select name="tag-two" id="tag-two"></select>
+                <input id="submit" type="button" value="Submit">
+            </form>
+            <div id="content"></div>
+        </div>
+    </main>
+    <script>
+        (async () => {
+            const messageEl = document.getElementById('message');
+            const contentEl = document.getElementById('content');
+
+            const createElementForTagName = (tagName) => {
+                const optionEl = document.createElement('option');
+                optionEl.setAttribute('value', tagName);
+                optionEl.innerText = tagName;
+                return optionEl;
+            };
+
+            const {status, data} = await fetch('/all-tags').then((res) => res.json());
+
+            // query for all tags
+            // generate html to insert tags into select statements
+            const tagOneEl = document.getElementById('tag-one');
+            const tagTwoEl = document.getElementById('tag-two');
+
+            // need to have 2 different loops to populate tags dropdown select
+            // menu, can't do it in one loop... wtf
+            data.forEach((tag) => tagOneEl.appendChild(createElementForTagName(tag.tagName)));
+            data.forEach((tag) => tagTwoEl.appendChild(createElementForTagName(tag.tagName)));
+    
+    
+            document.getElementById('submit').addEventListener('click', async (e) => {
+                e.preventDefault();
+
+                // empty out content element
+                while (contentEl.firstChild) {
+                    contentEl.removeChild(contentEl.firstChild);
+                }
+
+                const urlStr = `/users/${tagOneEl.value}/${tagTwoEl.value}`;
+                const {status, data} = await fetch(urlStr).then((res) => res.json());
+                if (status === 'error') {
+                    messageEl.innerText = 'Uh-oh, an error has occurred! Try reloading the page.';
+                }
+                
+                const usernameList = document.createElement('p');
+                contentEl.appendChild(usernameList);
+                let usernames = 'Users: ';
+
+                for (key in data) {
+                    const {username, posts} = data[key];
+                    usernames += `${username} `;
+
+                    if (posts.length <= 0) {
+                        continue;
+                    }
+
+                    // OPTIONAL:
+                    // Was going to show all the posts alongisde the users but
+                    // I realized I only need to show the users...
+                    // Can still show posts, just do it after this comment
+                }
+                usernameList.innerText = usernames;
+            });
+        })();
+    </script>
+</body>
+</html>

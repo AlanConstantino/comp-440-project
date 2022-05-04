@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../pages/css/normalize.css">
+    <link rel="stylesheet" href="../pages/css/skeleton.css">
+    <link rel="stylesheet" href="../pages/css/style.css">
+    <title>List Users Different Tags</title>
+</head>
+<body>
+    <main class="container">
+        <div class="row">
+            <h1>List the users who posted the most number of blogs on a certain date.</h1>
+            <div id="message"></div>
+            <form>
+                <label for="month">Month</label>
+                <input id="month" type="number" name="month" step="1" value="5">
+                <label for="day">Day</label>
+                <input id="day" type="number" name="day" step="1" value="1">
+                <label for="year">Year</label>
+                <input id="year" type="number" name="year" step="1" value="2022">
+                <button id="button">Submit</button>
+            </form>
+            <div id="content"></div>
+        </div>
+    </main>
+    <script>
+        (async () => {
+            const isWithinRange = (num, low, high) => num >= low && num <= high;
+            const clearEl = (htmlEl) => {
+                while (htmlEl.firstChild) {
+                    htmlEl.removeChild(htmlEl.firstChild);
+                }
+            };
+
+            const monthEl = document.getElementById('month');
+            const dayEl = document.getElementById('day');
+            const yearEl = document.getElementById('year');
+            const buttonEl = document.getElementById('button');
+            const messageEl = document.getElementById('message');
+            const contentEl = document.getElementById('content');
+
+            buttonEl.addEventListener('click', async (e) => {
+                e.preventDefault();
+                clearEl(contentEl);
+
+                // check all input elements to make sure they're valid
+                if (!isWithinRange(monthEl.value, 1, 12)) {
+                    messageEl.innerText = 'Not valid month range. Has to be between 1-12.'
+                    return;
+                }
+
+                if (!isWithinRange(dayEl.value, 1, 31)) {
+                    messageEl.innerText = 'Not valid day range. Has to be between 1-31.'
+                    return;
+                }
+                
+                if (!isWithinRange(yearEl.value, 2021, new Date().getFullYear())) {
+                    messageEl.innerText = `Not a valid year. Has to be between 2021 and the current year (${new Date().getFullYear()}).`
+                    return;
+                }
+
+                const date = `${yearEl.value}-${monthEl.value}-${dayEl.value}`;
+                const {status, data} = await fetch(`/users/${date}`).then((res) => res.json())
+
+                messageEl.innerText = '';
+                if (status === 'error') {
+                    messageEl.innerText = data;
+                    return;
+                }
+
+                const usersToAppend = [];
+                data.forEach((user) => {
+                    const userDataEl = document.createElement('p');
+                    userDataEl.innerText = `Username: ${user.username}, Posts: ${user.posts}`;
+                    usersToAppend.push(userDataEl);
+                    // console.log(user);
+                });
+
+                
+                usersToAppend.forEach((el) => contentEl.appendChild(el));
+
+                // console.log(data);
+            });
+        })();
+    </script>
+</body>
+</html>

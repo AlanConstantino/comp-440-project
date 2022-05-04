@@ -152,6 +152,14 @@ app.get('/create-comment/:idBlog', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/create-comment.html'));
 });
 
+app.get('/list-users-different-tags', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages/list-users-different-tags.html'));
+});
+
+app.get('/list-date', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages/list-date.html'));
+});
+
 app.get('/positive-comments-particular-user', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/positive-comments-particular-user.html'));
 });
@@ -489,6 +497,83 @@ app.post('/posts', async (req, res) => {
     }
 });
 
+// return the usernames of those users who posted on a particual date as well
+// as the number of posts they've made for that day
+app.get('/users/:date', async (req, res) => {
+    if (!req.params.date) {
+        res.status(400).send({status: 'error', error: 'Error: No date passed in as a parameter.'});
+        return;
+    }
+
+    try {
+        // the array will contain an object as an entry
+        // each object will contain the username and amount of posts that user made
+        // there will be multiple objects if multiple users have posted the same amount for that day
+        const users = [];
+        
+        // select all users who posted on a particular day
+        const sql = 'SELECT idUser FROM blog WHERE date = ?';
+        const data = await db.perform(sql, req.params.date);
+
+        // check to make sure date is a passed in parameter
+        if (!data.length) {
+            res.status(400).send({status: 'error', data: 'No posts for chosen date exist!'});
+            return;
+        }
+        
+        // filter out the ids of each user and place them in an array
+        const ids = new Set(data.map((item) => { if ('idUser' in item) return item.idUser }));
+
+        // count the total number of posts for each id passed in
+        const count = {};
+        for (const id of ids) {
+            const sql2 = 'SELECT COUNT(idBlog) FROM blog WHERE idUser = ? AND date = ?';
+            const values2 = [id, req.params.date];
+            const data2 = await db.perform(sql2, values2); 
+            const numOfPosts = data2[0]['COUNT(idBlog)'];
+
+            if (numOfPosts in count) {
+                count[numOfPosts].push(id);
+            } else {
+                count[numOfPosts] = [id];
+            }
+
+        }
+
+        // Get the highest key number (which represents the number of posts users made)
+        // and return the array of user ids
+        let highestKey = 0;
+        for (key in count) {
+            const intKey = parseInt(key);
+            if (intKey > highestKey) {
+                highestKey = intKey;
+            }
+        }
+
+        // finally get the actual username based on the ids of the users
+        for (userId of count[highestKey]) {
+            const sql = 'SELECT username FROM user WHERE idUser = ?';
+            const data = await db.perform(sql, userId);
+            users.push({ username: data[0].username, posts: highestKey });
+        }
+
+        res.status(200).send({status: 'success', data: users});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+app.get('/all-tags', async (req, res) => {
+    try {
+        const sql = 'SELECT DISTINCT tagName FROM tag';
+        const data = await db.perform(sql);
+
+        res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
 // returns all the tags associated with the blog id
 app.get('/tags/:idBlog', async (req, res) => {
     // check to see if idBlog is a parameter, if not error out
@@ -512,6 +597,71 @@ app.get('/users', async (req, res) => {
         const sql = 'SELECT idUser, username from user';
         const data = await db.perform(sql);
         res.status(200).send({status: 'success', data});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+app.get('/users/:tagOne/:tagTwo', async (req, res) => {
+    if (!req.params.tagOne || !req.params.tagTwo) {
+        res.status(400).send({status: 'error', error: 'Tags not passed as URL parameters.'});
+        return;
+    }
+
+    try {
+        // object that will contain users who have posted at least 2
+        // or more times along with their posts and the tags of each post
+        const users = {};
+
+        // get username and idUser of posters
+        const sql = 'SELECT DISTINCT user.username, user.idUser FROM user INNER JOIN blog ON user.idUser = blog.idUser';
+        const data = await db.perform(sql);    
+        data.forEach((user) => users[user.idUser] = {username: user.username, count: 0});
+
+        // get all ids of users from all blog posts
+        const sql2 = 'SELECT idUser FROM blog';
+        const listOfIdUserBlogs = await db.perform(sql2);
+        listOfIdUserBlogs.forEach((element) => users[element.idUser].count++);
+        
+        // filter dictionary for users who have posted at least 2 times
+        for (let key in users) {
+            if (users[key].count < 2) {
+                delete users[key];
+            }
+        }
+
+        // gets all idBlogs whose tags match that of the passed in tags
+        const sql3 = 'SELECT DISTINCT idBlog FROM tag WHERE tagName = ? OR tagName = ?';
+        const values = [req.params.tagOne, req.params.tagTwo];
+        const data3 = await db.perform(sql3, values);
+
+        // save all blogs of interest as a list
+        const blogs = [];
+        for (let i = 0; i < data3.length; i++) {
+            const sql = 'SELECT * FROM blog WHERE idBlog = ?';
+            const value = [data3[i].idBlog]
+            const [data] = await db.perform(sql, value);
+            if (!data) {
+                continue;
+            }
+            blogs.push(data);
+        }
+
+        // filter all posts so they match the users in the users dictionary
+        // then add the posts to the dictionary
+        // also get the tags associated with each post and insert them too
+        // the key in the dictionary is also the id of the user    
+        for (let key in users) {
+            const posts = Object.values(JSON.parse(JSON.stringify(blogs.filter((blog) => blog.idUser == key))));
+            for (let i = 0; i < posts.length; i++) {
+                const sql = 'SELECT tagName FROM tag WHERE idBlog = ?';
+                const data = await db.perform(sql, posts[i].idBlog);
+                posts[i].tags = data.map((item) => item.tagName);
+            }
+            users[key].posts = posts;
+        }
+
+        res.status(200).send({status: 'success', data: users});
     } catch (error) {
         res.status(400).send({status: 'error', error});
     }
