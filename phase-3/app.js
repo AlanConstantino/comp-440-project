@@ -164,6 +164,10 @@ app.get('/positive-comments-particular-user', (req, res) => {
     res.sendFile(path.join(__dirname, 'pages/positive-comments-particular-user.html'));
 });
 
+app.get('/follow-filter', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pages/follow-filter.html'));
+});
+
 app.get('/blogs-with-positive-comments/:idUser', async (req, res) => {
     try {
         if (!req.params.idUser) {
@@ -797,6 +801,190 @@ app.post('/initialize', (req, res) => {
         res.status(200).send({message: `Successfully executed the ${INITIALIZE_DATA_FILE} file!`});
     });
 });
+
+app.get('/followers/:userX/:userY', async (req, res) => {
+    if (!req.params.userX || !req.params.userY) {
+        res.status(400).send({status: 'error', error: 'Error: One or more parameters are missing.'});
+        return;
+    }
+
+    try {
+        const getId = async (username) => {
+            const sql = 'SELECT idUser FROM user WHERE username = ?';
+            const data = await db.perform(sql, username);
+            if (!data.length) return false;
+            return data[0].idUser;
+        };
+        const getUsername = async (id) => {
+            const sql = 'SELECT username FROM user WHERE idUser = ?';
+            const data = await db.perform(sql, id);
+            if (!data.length) return false;
+            return data[0].username;
+        };
+        const getFollowers = async (id) => {
+            const sql = 'SELECT idFollower FROM follow WHERE idUser = ?';
+            const data = await db.perform(sql, id);
+            if (!data.length) return [];
+            return data.map((follower) => follower.idFollower);
+        };
+
+        // ids of both userX and userY
+        const idUserX = await getId(req.params.userX);
+        const idUserY = await getId(req.params.userY);
+
+        const followersOfX = await getFollowers(idUserX);
+        const followersOfY = await getFollowers(idUserY);
+
+        // if both users have no followers, then just exit
+        if (!followersOfX.length && !followersOfY.length) {
+            res.status(400).send({status: 'error', error: 'Both users have no followers.'});
+            return;
+        }
+
+        const intersectionOfFollowers = followersOfX.filter((item) => followersOfY.includes(item));
+
+        if (!intersectionOfFollowers.length) {
+            res.status(400).send({status: 'error', error: "Users don't share followers or don't have followers."});
+            return;
+        }
+
+        // finally iterate over all user ids and query db for their usernames
+        const followers = [];  
+        for (let i = 0; i < intersectionOfFollowers.length; i++) {
+            followers.push(await getUsername(intersectionOfFollowers[i]));
+        }
+        
+        res.status(200).send({status: 'success', data: followers});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+// follows a particular user
+app.post('/follow', async (req, res) => {
+    if (!req.body.idToFollow || !req.body.username) {
+        res.status(400).send({status: 'error', error: 'Error: One or more body contents are missing.'});
+        return;
+    }
+
+    const { idToFollow, username } = req.body;
+
+    try {
+        // get the user id of the person's username
+        const sqlGetId = 'SELECT idUser FROM user WHERE username = ?';
+        const [{idUser: idOfFollower}] = await db.perform(sqlGetId, username);
+
+        // check to make sure user isn't already following the person they're trying to follow
+        const sqlCheck = "SELECT CASE WHEN EXISTS (SELECT * FROM follow WHERE idUser = ? AND idFollower = ?) THEN 'TRUE' ELSE 'FALSE' END";
+        const sqlCheckValues = [idToFollow, idOfFollower];
+        const [sqlCheckData] = await db.perform(sqlCheck, sqlCheckValues);
+        const isAlreadyFollowing = sqlCheckData[Object.keys(sqlCheckData)[0]] === 'TRUE' ? true : false;
+        
+        // if user is already following person then exit
+        if (isAlreadyFollowing) {
+            res.status(400).send({status: 'success', data: 'Already following user.'});
+            return;
+        }
+    
+        // Insert the user into database (i.e. follow the user)
+        const sql = 'INSERT INTO follow (idUser, idFollower) VALUES (?, ?)';
+        const values = [idToFollow, idOfFollower];
+        await db.perform(sql, values);
+
+        res.status(200).send({status: 'success', data: 'Successfully followed user!'});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+    // res.status(200).send({status: 'inside of /fetch'});
+});
+
+app.get('/is-following/:idToFollow/:idOfFollower', async (req, res) => {
+    const getId = async (username) => {
+        const sql = 'SELECT idUser FROM user WHERE username = ?';
+        const data = await db.perform(sql, username);
+        if (!data.length) return false;
+        return data[0].idUser;
+    };
+
+
+    if (!req.params.idOfFollower || !req.params.idToFollow) {
+        res.status(400).send({status: 'error', error: 'Error: Missing url parameters.'});
+        return;
+    }
+
+    try {
+        let idOfFollower;
+        let idToFollow;
+        
+        // check to see if idOfFollower is a NaN when converted to an int
+        // if it's NaN, then you know you have a username, else it's an id
+        if (isNaN(parseInt(req.params.idOfFollower))) {
+            idOfFollower = await getId(req.params.idOfFollower);
+            
+            // if you have a username, then get their id
+            if (idOfFollower === false) {
+                res.status(400).send({status: 'error', error: `User by the username of '${req.params.idOfFollower}' doesn't exist.`});
+                return;
+            }
+        } else {
+            idOfFollower = parseInt(req.params.idOfFollower);
+        }
+
+        // check to see if :idToFollow is a valid number when parsed
+        if (isNaN(parseInt(req.params.idToFollow))) {
+            idToFollow = await getId(req.params.idToFollow);
+            
+            if (idToFollow === false) {
+                res.status(400).send({status: 'error', error: `User by the username of '${req.params.idToFollow}' doesn't exist.`});
+                return;
+            }
+        } else {
+            // if valid number then just store it in idToFollow
+            idToFollow = parseInt(req.params.idToFollow);
+        }
+
+        // have to check if idOfFollower already follows idToFollow
+        const sql = 'SELECT * FROM follow WHERE idUser = ? AND idFollower = ?';
+        const values = [idToFollow, idOfFollower];
+        const data = await db.perform(sql, values);
+
+        if (!data.length) {
+            res.status(200).send({status: 'success', data: false});
+            return;
+        }
+        
+        res.status(200).send({status: 'success', data: true});
+    } catch (error) {
+        res.status(200).send({status: 'error', error});
+    }
+});
+
+// unfollows a particular user
+app.delete('/unfollow', async (req, res) => {
+    if (!req.body.idToUnfollow || !req.body.username) {
+        res.status(400).send({status: 'error', error: 'Error: One or more body contents are missing.'});
+        return;
+    }
+
+    const { idToUnfollow, username } = req.body;
+
+    try {
+        // get the user id of the person's username
+        const sqlGetId = 'SELECT idUser FROM user WHERE username = ?';
+        const [{idUser: idOfFollower}] = await db.perform(sqlGetId, username);
+
+        // Delete follow from database (i.e. unfollow user)
+        const sql = 'DELETE FROM follow WHERE idUser = ? AND idFollower = ?';
+        const values = [idToUnfollow, idOfFollower];
+        await db.perform(sql, values);
+
+        res.status(200).send({status: 'success', data: 'Successfully unfollowed user!'});
+    } catch (error) {
+        res.status(400).send({status: 'error', error});
+    }
+});
+
+// implement a request that lists the users who are followed by both X and Y usernames
 
 app.post('/logout', (req, res) => {
     database.end();

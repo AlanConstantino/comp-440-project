@@ -29,6 +29,7 @@
             <a href="/list-users-different-tags">1. List the users who post at least two blogs, one has a tag of "X", the other has a tag of "Y".</a>
             <a href="/positive-comments-particular-user">2. List All Blogs of Some User Such That Their Comments Are Positive</a>
             <a href="/list-date">3. List the users who posted the most number of blogs on a particular date (default date is 5/1/2022)</a>
+            <a href="/follow-filter">4. List the users who are followed by both X and Y where X and Y are inputs from the user.</a>
             <button id="common-hobby" type="button">5. List Pairs of Users Who Share a Common Hobby</button>
             <button id="never-blog" type="button">6. List Users Who Never Posted a Blog/Post</button>
             <button id="never-comment" type="button">7. List Users Who Never Posted a Comment</button>
@@ -132,7 +133,7 @@
         .then((data) => {
           const postsContainer = document.getElementById('posts-container');
   
-          data.data.forEach(async (item) => {
+          data.data.forEach(async (item, i) => {
             // for comment
             const commentContainer = document.createElement('div');
             const commentTitle = document.createElement('h4');
@@ -155,8 +156,68 @@
             tags.innerText = "Tags: ";
             createCommentLink.innerText = 'Comment on this post';
             createCommentLink.href = `./create-comment/${item.idBlog}`;
-            followLink.innerText = 'Follow';
-            followLink.href = `./follow/${item.idUser}`;
+
+            const {status, data: isFollowing} = await fetch(`/is-following/${item.idUser}/${window.sessionStorage.getItem('username')}`).then((res) => res.json());
+
+            followLink.innerText = isFollowing ? 'Unfollow' : 'Follow';
+            followLink.href = `/${followLink.innerText.toLowerCase()}/${item.idUser}`;
+            followLink.id = `follow-${item.idBlog}`;
+
+            // hide follow/unfollow link if the post is from the user themselves
+            followLink.addEventListener('click', async (e) => {
+              e.preventDefault();
+              const username = sessionStorage.getItem('username');
+
+              // const url = `${followLink.href}/${username}`;
+              const splitUrl = followLink.href.split('/');
+              const idToFollow = parseInt(splitUrl[splitUrl.length - 1]);
+
+              
+              // const {status, data} = await fetch('/follow', options).then((res) => res.json());
+              
+              if (followLink.innerText === 'Follow') {
+                const options = {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username, idToFollow }),
+                }
+
+                const {status, data} = await fetch('/follow', options).then((res) => res.json());
+                
+                if (status === 'error') {
+                  message.innerText = 'An error occured!';
+                }
+                
+                // if successful, reload page
+                if (status === 'success') {
+                  console.log(data);
+                  window.location.href = window.location.href;
+                }
+              }
+              
+              if (followLink.innerText === 'Unfollow') {
+                // send fetch request to unfollow user
+                const options = {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ username, idToUnfollow: idToFollow }),
+                }
+
+                const {status, data} = await fetch('/unfollow', options).then((res) => res.json());
+                
+                if (status === 'error') {
+                  message.innerText = 'An error occured!';
+                }
+                
+                if (status === 'success') {
+                  console.log(data);
+                  window.location.href = window.location.href;
+                }
+              }
+
+              // switch innert text of follow link from 'Follow' to 'Unfollow' and vice versa
+              followLink.innerText = (followLink.innerText === 'Follow') ? 'Unfollow' : 'Follow';
+            });
 
             commentContainer.appendChild(followLink);
             commentContainer.appendChild(document.createElement('br'));
@@ -167,7 +228,12 @@
             tagsRaw.data.forEach((item) => tags.innerText += `${item.tagName} `);
 
             const userRaw = await fetch(`/user/${item.idUser}`, {method: 'POST'}).then((res) => res.json());
-            userRaw.data.forEach((item) => user.innerText = 'by ' + item.username);
+            userRaw.data.forEach((item) => {
+              user.innerText = 'by ' + item.username;
+              if (sessionStorage.getItem('username') === item.username) {
+                followLink.style.visibility = 'hidden';
+              }
+            });
     
             subject.innerText = 'Subject: ' + item.subject;
             description.innerText = 'Description: ' + item.description;

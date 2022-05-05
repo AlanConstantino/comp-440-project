@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="../pages/css/normalize.css">
+    <link rel="stylesheet" href="../pages/css/skeleton.css">
+    <link rel="stylesheet" href="../pages/css/style.css">
+    <title>Filter By Followers</title>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <h1>List the users who are followed by both X and Y where X and Y are inputs from the user.</h1>
+            <div id="message"></div>
+            <form>
+                <label for="username-x">Select a Username (i.e. X):</label>
+                <select name="username-x" id="username-x"></select>
+                <label for="username-y">Select a Username (i.e. Y):</label>
+                <select name="username-y" id="username-y"></select>
+                <button id="submit">Submit</button>
+            </form>
+            <div id="content"></div>
+        </div>
+    </div>
+    <script>
+        (async () => {
+            // html elements
+            const usernameX = document.getElementById('username-x');
+            const usernameY = document.getElementById('username-y');
+            const submitBtn = document.getElementById('submit');
+            const message = document.getElementById('message');
+            const content = document.getElementById('content');
+
+            // fetch request for getting users
+            const {status, data} = await fetch('/users').then((res) => res.json());
+            const users = data.map((item) => item.username);
+
+            // create option elements and populate for usernameX element
+            users.forEach((username) => {
+                const optionEl = document.createElement('option');
+                optionEl.value = optionEl.innerText = username;
+                usernameX.appendChild(optionEl);
+            });
+
+            // create option elements and zpopulate for usernameY element
+            users.forEach((username) => {
+                const optionEl = document.createElement('option');
+                optionEl.value = optionEl.innerText = username;
+                usernameY.appendChild(optionEl);
+            });
+
+            // event listener for when user clicks on the submit button
+            submitBtn.addEventListener(('click'), async (e) => {
+                e.preventDefault();
+    
+                // make sure user doesn't submit the same username for both fields
+                if (usernameX.value === usernameY.value) {
+                    message.innerText = "Error: Can't use the same username for both X and Y values.";
+                    return;
+                }
+                
+                // fetch the shared followers for both users
+                const {status, data, error} = await fetch(`/followers/${usernameX.value}/${usernameY.value}`).then((res) => res.json());
+
+                // if fetch request returns an error, display it
+                if (status === 'error') {
+                    message.innerText = error;
+                    return;
+                }
+
+                content.innerText = `Users followed by both '${usernameX.value}' and '${usernameY.value}' are:`;
+                message.innerText = '';
+
+                // format each username as an unordered list
+                const ulEl = document.createElement('ul');
+                data.forEach((username) => {
+                    const liEl = document.createElement('li');
+                    liEl.innerText = username;
+                    ulEl.appendChild(liEl);
+                });
+                content.appendChild(ulEl);
+            });
+        })();
+    </script>
+</body>
+</html>
