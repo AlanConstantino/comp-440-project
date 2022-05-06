@@ -41,7 +41,7 @@ CREATE TABLE `blog` (
 
 LOCK TABLES `blog` WRITE;
 /*!40000 ALTER TABLE `blog` DISABLE KEYS */;
-INSERT INTO `blog` VALUES (1,1,'a','s','2022-04-17 00:00:00'),(18,1,'ss','ggsa','2022-04-17 00:00:00'),(19,1,'ssffwwfgaw','12345','2022-04-20 00:00:00'),(20,3,'ssss','ssss','2022-04-20 00:00:00'),(21,3,'My Subject','This is my description','2022-04-20 00:00:00'),(22,5,'My Subject','My Description','2022-04-20 00:00:00'),(23,1,'This is my subject','This is my totally important description!','2022-04-20 00:00:00'),(24,12,'This is my first post!','Description important!','2022-04-24 00:00:00'),(25,1,'This is my important subject','My description!','2022-04-25 00:00:00'),(26,12,'This is another post!','This is a description','2022-04-25 00:00:00'),(27,1,'69','69','2022-05-05 00:00:00'),(28,1,'1','1','2022-05-05 00:00:00'),(29,1,'create post subject','This is my description.','2022-05-05 00:00:00'),(30,7,'My subject.','My description.','2022-05-05 00:00:00'),(31,7,'My subject.','My description.','2022-05-05 00:00:00'),(32,7,'My subject.','My description.','2022-05-05 00:00:00'),(33,3,'My subject.','My description.','2022-05-05 00:00:00'),(34,3,'My subject.','My description.','2022-05-05 00:00:00'),(35,12,'My subject.','My description.','2022-05-05 00:00:00');
+INSERT INTO `blog` VALUES (1,1,'My first post ever!','My first ever description!','2022-05-01 00:00:00'),(18,7,'Hello I\'m Yosef!','I\'m introducing myself! Hello!','2022-05-01 00:00:00'),(19,1,'I like this website!','This webapp is really cool.','2022-04-20 00:00:00'),(20,3,'Snakes','Venomous snakes are my favorite reptiles.','2022-04-20 00:00:00'),(21,3,'New Phone','Should I get a new phone? Let me know in the comments guys!','2022-04-20 00:00:00'),(22,5,'Vinyl Music','I am a collector of vinyls.','2022-05-01 00:00:00'),(23,1,'Discord','Let me know in the comments if anyone uses discord.','2022-04-20 00:00:00'),(24,12,'Youtube Competitor','Someone should really make a webapp that competes with YouTube.','2022-04-24 00:00:00'),(25,1,'This is my important subject','My description!','2022-05-01 00:00:00'),(26,12,'This is another post!','This is a description','2022-04-25 00:00:00'),(27,9,'Rock music rocks!','I really like rock music!','2022-05-05 00:00:00'),(28,5,'Rap music rocks!','I really like rap music!','2022-05-05 00:00:00'),(29,11,'Really important post','Really important description.','2022-05-05 00:00:00'),(30,7,'Cakes are great!','I love cakes! They\'re easy to make and are delicious!','2022-05-05 00:00:00'),(31,7,'I hate running :(','Running hurts my feet.','2022-05-05 00:00:00'),(32,8,'My subject.','My description.','2022-05-05 00:00:00'),(33,3,'SQL is easy','SQL is pretty easy to learn, just saying.','2022-05-05 00:00:00'),(34,3,'Why is the sky blue?','I wonder why the sky is blue. Can someone explain why?','2022-05-05 00:00:00'),(35,12,'What kind of car do you drive?','I drive a Tesla model 3, what about you guys?','2022-05-05 00:00:00');
 /*!40000 ALTER TABLE `blog` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -74,7 +74,7 @@ CREATE TABLE `comment` (
 
 LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
-INSERT INTO `comment` VALUES (1,1,'2022-04-17 00:00:00','This is my description',1,1),(5,1,'2022-04-20 00:00:00','This is my comment that is totally important!',20,0),(6,1,'2022-04-20 00:00:00','fffffaaa',19,1),(25,8,'2022-04-24 00:00:00','I like this post.',18,1),(26,8,'2022-04-24 00:00:00','mine',22,1),(27,1,'2022-04-24 00:00:00','This is an example comment!',22,1),(28,12,'2022-04-24 00:00:00','This is important! My comment.',23,0),(29,1,'2022-04-25 00:00:00','This is my comment!',22,0),(30,1,'2022-04-25 00:00:00','This is yet another comment!',22,1),(31,1,'2022-05-05 00:00:00','I like this post! Good job!',24,0),(32,1,'2022-05-05 00:00:00','my comment 1',31,1),(33,1,'2022-05-05 00:00:00','my comment 2',31,0);
+INSERT INTO `comment` VALUES (1,15,'2022-04-17 00:00:00','This is my description',1,1),(5,14,'2022-04-20 00:00:00','This is my comment that is totally important!',20,0),(6,1,'2022-04-20 00:00:00','fffffaaa',19,1),(25,8,'2022-04-24 00:00:00','I like this post.',18,1),(26,8,'2022-04-24 00:00:00','mine',22,1),(27,11,'2022-05-01 00:00:00','This is an example comment!',22,1),(28,12,'2022-04-24 00:00:00','This is important! My comment.',23,0),(29,1,'2022-05-01 00:00:00','This is my comment!',22,0),(30,8,'2022-04-25 00:00:00','This is yet another comment!',22,1),(31,1,'2022-05-05 00:00:00','I like this post! Good job!',24,0),(32,9,'2022-05-05 00:00:00','my comment 1',31,1),(33,5,'2022-05-05 00:00:00','my comment 2',31,0);
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -95,7 +95,7 @@ CREATE TABLE `follow` (
   KEY `fk_follower_idx` (`idFollower`),
   CONSTRAINT `fk_follow` FOREIGN KEY (`idUser`) REFERENCES `user` (`idUser`),
   CONSTRAINT `fk_follower` FOREIGN KEY (`idFollower`) REFERENCES `user` (`idUser`)
-) ENGINE=InnoDB AUTO_INCREMENT=43 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -104,7 +104,7 @@ CREATE TABLE `follow` (
 
 LOCK TABLES `follow` WRITE;
 /*!40000 ALTER TABLE `follow` DISABLE KEYS */;
-INSERT INTO `follow` VALUES (34,3,7),(35,3,12),(36,4,12),(37,4,7),(38,4,11),(39,8,4),(40,8,12),(41,3,1),(42,12,1);
+INSERT INTO `follow` VALUES (34,3,7),(35,3,12),(36,4,12),(37,4,7),(38,4,11),(39,8,4),(40,8,12),(41,3,1),(42,12,1),(43,15,11),(44,15,12),(45,15,13),(46,15,14),(47,7,15);
 /*!40000 ALTER TABLE `follow` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -155,7 +155,7 @@ CREATE TABLE `user` (
   UNIQUE KEY `email_UNIQUE` (`email`),
   UNIQUE KEY `userID_UNIQUE` (`idUser`),
   UNIQUE KEY `username_UNIQUE` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -164,7 +164,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES (1,'abc','abc','abc','abc','abc@abc.com','swimming'),(3,'cba','cba','cba','cba','cba@gmail.com','swimming'),(4,'12','12','12','12','12@gmail.com','cooking'),(5,'6','6','6','6','6@gmail.com','cooking'),(7,'Alan','Alan','Alan','Constantino','alan@gmail.com','movie'),(8,'a','a','a','a','a@gmail.com','dancing'),(9,'b','b','b','b','b@gmail.com','calligraphy'),(11,'123','123','123','123','123@gmail.com','movie'),(12,'name','name','name','name','name@gmail.com','calligraphy');
+INSERT INTO `user` VALUES (1,'Taylor','123','Taylor','Avery','taylor@email.com','swimming'),(3,'Naima','123','Naima','Melendez','naima@email.com','swimming'),(4,'Savanah','123','Savanah','Pruitt','savanah@email.com','cooking'),(5,'Randy','123','Randy','Tate','randy@email.com','cooking'),(7,'Yosef','123','Yosef','Hoover','yosef@email.com','movie'),(8,'Akira','123','Akira','Crawford','akira@email.com','dancing'),(9,'Maddox','123','Maddox','McCarthy','maddox@email.com','calligraphy'),(11,'Keaton','123','Keaton','Noble','keaton@email.com','movie'),(12,'Kristen','123','Kristen','Booth','kristen@email.com','calligraphy'),(13,'Angelo','123','Angelo','Hill','angelo@email.com','bowling'),(14,'Elianna','123','Elianna','Sloan','elianna@email.com','bowling'),(15,'Carina','123','Carina','Blair','carina@email.com','dancing');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -177,4 +177,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-05-05 22:06:18
+-- Dump completed on 2022-05-05 23:23:02
