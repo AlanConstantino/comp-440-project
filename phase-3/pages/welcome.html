@@ -263,7 +263,7 @@
 
             subject.innerText = 'Subject: ' + item.subject;
             description.innerText = 'Description: ' + item.description;
-            date.innerText = 'Date: ' + item.date;
+            date.innerText = 'Date: ' + item.date.slice(0, item.date.indexOf('T'));
             // rate.innerText = 'Rate: ' + item.rate;
 
             // for post
