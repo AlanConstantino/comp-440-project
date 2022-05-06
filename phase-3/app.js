@@ -12,7 +12,7 @@ const INITIALIZE_DATA_FILE = 'schema-and-data.sql';
 const mysql = require('mysql');
 const database = mysql.createConnection({
     host: '127.0.0.1',
-    user: 'user',
+    user: 'root',
     password: '',
     port: '3306',
     database: 'comp440'
