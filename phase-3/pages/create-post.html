@@ -30,14 +30,15 @@
         </div>
     </div>
     <script>
-        // if the user is not logged in, let them know
+        (async () => {
+            // if the user is not logged in, let them know
         if (!window.sessionStorage.getItem('username')) {
             const divMessage = document.getElementById('message');
             divMessage.innerHTML = 'You are NOT logged in! <br> Click <a href="/">here</a> to login.<br><br>';
             document.getElementById('content').hidden = true;
         } else {
             const createButton = document.getElementById('create');
-            createButton.addEventListener('click', (e) => {
+            createButton.addEventListener('click', async (e) => {
                 e.preventDefault();
     
                 const username = window.sessionStorage.getItem('username');
@@ -56,11 +57,15 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(bodyData)
                 };
-                fetch('/create-post', options)
-                    .then(res => res.json())
-                    .then(data => console.log(data));
+                const {status, data} = await fetch('/create-post', options).then(res => res.json());
+
+                if (status === 'success') {
+                    console.log(data);
+                    window.location.href = '/welcome';
+                }
             });
         }
+        })();
     </script>
 </body>
 </html>

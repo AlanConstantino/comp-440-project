@@ -396,36 +396,36 @@ app.get('/sentiment/:idComment', async (req, res) => {
 });
 
 // return the rating of the blog based on the blog's id
-app.get('/rating/:idBlog', async (req, res) => {
-    if (!req.params.idBlog) {
-        res.status(400).send({status: 'error', error: 'Error: No blog id passed as a parameter.'});
-        return;
-    }
+// app.get('/rating/:idBlog', async (req, res) => {
+//     if (!req.params.idBlog) {
+//         res.status(400).send({status: 'error', error: 'Error: No blog id passed as a parameter.'});
+//         return;
+//     }
     
-    try {
-        const sql = 'SELECT rate FROM blog WHERE idBlog = ?';
-        const data = await db.perform(req.params.idBlog);
-        res.status(200).send({status: 'success', data});
-    } catch(error) {
-        res.status(400).send({status: 'error', error});
-    }
-});
+//     try {
+//         const sql = 'SELECT rate FROM blog WHERE idBlog = ?';
+//         const data = await db.perform(req.params.idBlog);
+//         res.status(200).send({status: 'success', data});
+//     } catch(error) {
+//         res.status(400).send({status: 'error', error});
+//     }
+// });
 
 // for updating the rating column of the blog table with a specific blog id
-app.put('/rating', async (req, res) => {
-    if (!req.body.rating || !req.body.idBlog) {
-        res.status(400).send({status: 'error', error: 'Error: No new rating and/or blog id passed as a body parameter.'});
-        return;
-    }
+// app.put('/rating', async (req, res) => {
+//     if (!req.body.rating || !req.body.idBlog) {
+//         res.status(400).send({status: 'error', error: 'Error: No new rating and/or blog id passed as a body parameter.'});
+//         return;
+//     }
 
-    try {
-        const sql = 'UPDATE blog SET rate = ? WHERE idBlog = ?';
-        const data = await db.perform(sql, [req.body.rating, req.body.idBlog]);
-        res.status(200).send({status: 'success', data});
-    } catch (error) {
-        res.status(400).send({status: 'error', error});
-    }
-});
+//     try {
+//         const sql = 'UPDATE blog SET rate = ? WHERE idBlog = ?';
+//         const data = await db.perform(sql, [req.body.rating, req.body.idBlog]);
+//         res.status(200).send({status: 'success', data});
+//     } catch (error) {
+//         res.status(400).send({status: 'error', error});
+//     }
+// });
 
 // add the comment to the database
 app.post('/insert-comment/:idBlog', async (req, res) => {
@@ -436,27 +436,34 @@ app.post('/insert-comment/:idBlog', async (req, res) => {
     }
 
     try {
-        const userData = await db.getIdOfUsername(req.body.username);
+        const [{idUser: idOfCommentor}] = await db.getIdOfUsername(req.body.username);
 
         const sql = 'SELECT idUser FROM blog WHERE idBlog = ?';
-        const userOfBlog = await db.perform(sql, req.params.idBlog);
-        
+        const [{idUser: idOfPersonWhoPostedBlog}] = await db.perform(sql, req.params.idBlog);
+
         // if the id of both the person who is commenting and the person who wrote the blog
         // are the same, error out since a user can't comment on their own post/blog
-        const idOfCommentor = userData[0].idUser;
-        const idOfPersonWhoPostedBlog = userOfBlog[0].idUser;
         if (idOfCommentor === idOfPersonWhoPostedBlog) {
             res.status(400).send({status: 'error', error: `Error: User can't comment on their own post.`});
             return;
         }
-        
-        const sql2 = 'SELECT idUser, date FROM comment WHERE idUser = ? AND DATE(`date`) = CURDATE()';
-        const dataOfCommentTotal = await db.perform(sql2, idOfCommentor);
-        const commentTotal = dataOfCommentTotal.length;
 
         // if user has already commented more than 3 or more times, error out
+        const sql2 = 'SELECT idUser, date FROM comment WHERE idUser = ? AND DATE(`date`) = CURDATE()';
+        const commentTotal = (await db.perform(sql2, idOfCommentor)).length;
+        // const commentTotal = dataOfCommentTotal.length;
         if (commentTotal >= 3) {
             res.status(400).send({status: 'error', error: `Error: User has already commented 3 times total for today.`});
+            return;
+        }
+
+        // check to see if user has already commented on current post
+        const sql3 = 'SELECT * FROM comment WHERE idBlog = ? AND idUser = ?';
+        const values = [req.params.idBlog, idOfCommentor];
+        const numOfCommentsPostedOnBlogByUser = (await db.perform(sql3, values)).length;
+        
+        if (numOfCommentsPostedOnBlogByUser >= 1) {
+            res.status(400).send({status: 'error', error: `Error: User has already commented on this post.`});
             return;
         }
 
@@ -617,55 +624,51 @@ app.get('/users/:tagOne/:tagTwo', async (req, res) => {
         // or more times along with their posts and the tags of each post
         const users = {};
 
-        // get username and idUser of posters
-        const sql = 'SELECT DISTINCT user.username, user.idUser FROM user INNER JOIN blog ON user.idUser = blog.idUser';
+        // get username and idUser of all distinct posters
+        const sql = 'SELECT user.username, user.idUser FROM user INNER JOIN blog ON user.idUser = blog.idUser';
         const data = await db.perform(sql);    
-        data.forEach((user) => users[user.idUser] = {username: user.username, count: 0});
 
-        // get all ids of users from all blog posts
-        const sql2 = 'SELECT idUser FROM blog';
-        const listOfIdUserBlogs = await db.perform(sql2);
-        listOfIdUserBlogs.forEach((element) => users[element.idUser].count++);
-        
-        // filter dictionary for users who have posted at least 2 times
+        // get all users who ever posted a blog
+        data.forEach((item) => {
+            users[item.idUser] = {
+                username: item.username,
+                count: (async () => {
+                    const sql = 'SELECT user.username, user.idUser FROM user INNER JOIN blog ON user.idUser = blog.idUser';
+                    const data = await db.perform(sql);
+                    return (data.filter((el) => el.idUser === item.idUser)).length;
+                })(),
+            };
+        });
+
+        // filter list for users who have posted more than twice
+        const filteredList = {};
         for (let key in users) {
-            if (users[key].count < 2) {
-                delete users[key];
+            const count = await users[key].count;
+            if (2 <= count) {
+                filteredList[key] = { count, idUser: parseInt(key), username: users[key].username };
             }
         }
 
-        // gets all idBlogs whose tags match that of the passed in tags
-        const sql3 = 'SELECT DISTINCT idBlog FROM tag WHERE tagName = ? OR tagName = ?';
-        const values = [req.params.tagOne, req.params.tagTwo];
-        const data3 = await db.perform(sql3, values);
+        // selects the ids of blogs whose tags match that of those provided
+        const sql2 = 'SELECT DISTINCT idBlog FROM tag WHERE tagName = ? OR tagName = ?';
+        const values2 = [req.params.tagOne, req.params.tagTwo];
+        const idsOfBlogs = await db.perform(sql2, values2);
 
-        // save all blogs of interest as a list
-        const blogs = [];
-        for (let i = 0; i < data3.length; i++) {
+        // iterate through the ids of the blogs and get all that match from db
+        // after, make sure that the id of the user matches that of the filtered list
+        const set = new Set([]);
+        for (let item of idsOfBlogs) {
             const sql = 'SELECT * FROM blog WHERE idBlog = ?';
-            const value = [data3[i].idBlog]
-            const [data] = await db.perform(sql, value);
-            if (!data) {
-                continue;
+            const [data] = await db.perform(sql, item.idBlog);
+
+            for (let key in filteredList) {
+                if (data.idUser === filteredList[key].idUser) {
+                    set.add(filteredList[key].username);
+                }
             }
-            blogs.push(data);
         }
 
-        // filter all posts so they match the users in the users dictionary
-        // then add the posts to the dictionary
-        // also get the tags associated with each post and insert them too
-        // the key in the dictionary is also the id of the user    
-        for (let key in users) {
-            const posts = Object.values(JSON.parse(JSON.stringify(blogs.filter((blog) => blog.idUser == key))));
-            for (let i = 0; i < posts.length; i++) {
-                const sql = 'SELECT tagName FROM tag WHERE idBlog = ?';
-                const data = await db.perform(sql, posts[i].idBlog);
-                posts[i].tags = data.map((item) => item.tagName);
-            }
-            users[key].posts = posts;
-        }
-
-        res.status(200).send({status: 'success', data: users});
+        res.status(200).send({status: 'success', data: [...set]});
     } catch (error) {
         res.status(400).send({status: 'error', error});
     }
@@ -700,14 +703,24 @@ app.post('/create-post', async (req, res) => {
     }
 
     try {
-        const userData = await db.getIdOfUsername(req.body.username);
-        const idUser = userData[0].idUser;
+        const [{idUser}] = await db.getIdOfUsername(req.body.username);
 
-        const sql = 'INSERT INTO blog (idUser, subject, description, date, rate) VALUES (?, ?, ?, CURDATE(), ?)';
+        const sqlPostCount = "SELECT * FROM blog WHERE idUser = ? AND date = CURDATE();";
+        const numOfPostsToday = (await db.perform(sqlPostCount, idUser)).length;
+
+        // check to see if user has reached their limit of 2 daily posts
+        if (numOfPostsToday >= 2) {
+            res.status(400).send({status: 'error', error: 'Error: User has reached daily limit of blog creation.'});
+            return;
+        }
+
+        // insert blog data into db
+        const sql = 'INSERT INTO blog (idUser, subject, description, date) VALUES (?, ?, ?, CURDATE())';
         const insertPost = await db.perform(sql, [idUser, req.body.subject, req.body.description]);
         const idBlog = insertPost.insertId;
         const tags = req.body.tags;
 
+        // insert tag data into db as long as there is one valid tag in the tags array
         if (tags.length >= 1) {
             const sql = 'INSERT INTO tag (tagName, idBlog) VALUES (?, ?)';
             for (let i = 0; i < tags.length; i++) {

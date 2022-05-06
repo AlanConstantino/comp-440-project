@@ -27,6 +27,7 @@
     </main>
     <script>
         (async () => {
+            // html elements
             const messageEl = document.getElementById('message');
             const contentEl = document.getElementById('content');
 
@@ -48,8 +49,7 @@
             // menu, can't do it in one loop... wtf
             data.forEach((tag) => tagOneEl.appendChild(createElementForTagName(tag.tagName)));
             data.forEach((tag) => tagTwoEl.appendChild(createElementForTagName(tag.tagName)));
-    
-    
+
             document.getElementById('submit').addEventListener('click', async (e) => {
                 e.preventDefault();
 
@@ -58,30 +58,43 @@
                     contentEl.removeChild(contentEl.firstChild);
                 }
 
+                // if both of the tags are the same, error out
+                if (tagOneEl.value === tagTwoEl.value) {
+                    messageEl.innerText = "Error: The tags must be different, they can't be the same.";
+                    return;
+                }
+
                 const urlStr = `/users/${tagOneEl.value}/${tagTwoEl.value}`;
                 const {status, data} = await fetch(urlStr).then((res) => res.json());
+
+                console.log(data);
+                if (data == undefined || data == null) {
+                    messageEl.innerText = `There are no users who have posted more than 2 blogs with the tags of '${tagOneEl.value}' and '${tagTwoEl.value}'`;
+                    return;
+                }
+
                 if (status === 'error') {
                     messageEl.innerText = 'Uh-oh, an error has occurred! Try reloading the page.';
                 }
-                
+
                 const usernameList = document.createElement('p');
                 contentEl.appendChild(usernameList);
                 let usernames = 'Users: ';
 
-                for (key in data) {
-                    const {username, posts} = data[key];
-                    usernames += `${username} `;
+                // for (key in data) {
+                //     const {username, posts} = data[key];
+                //     usernames += `${username} `;
 
-                    if (posts.length <= 0) {
-                        continue;
-                    }
+                //     if (posts.length <= 0) {
+                //         continue;
+                //     }
 
-                    // OPTIONAL:
-                    // Was going to show all the posts alongisde the users but
-                    // I realized I only need to show the users...
-                    // Can still show posts, just do it after this comment
-                }
-                usernameList.innerText = usernames;
+                //     // OPTIONAL:
+                //     // Was going to show all the posts alongisde the users but
+                //     // I realized I only need to show the users...
+                //     // Can still show posts, just do it after this comment if you want to
+                // }
+                // usernameList.innerText = usernames;
             });
         })();
     </script>
