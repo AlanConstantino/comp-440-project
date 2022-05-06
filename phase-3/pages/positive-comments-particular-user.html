@@ -15,12 +15,13 @@
         <div class="row">
             <h2>List All Blogs of Some User Such That Their Comments Are Positive</h2>
             <div>
+                <div id="message"></div>
                 <label for="usernames">Select a Username:</label>
                 <select name="usernames" id="usernames"></select>
                 <br>
                 <button id="submit">Submit</button>
             </div>
-            <div id="message"></div>
+            <div id="content"></div>
         </div>
     </div>
     <script>
@@ -48,37 +49,46 @@
             const optionEl = document.getElementById(`${selectEl.value}`);
             const idUser = optionEl.getAttribute('iduser');
             const messageEl = document.getElementById('message');
-            const data = await fetch(`/blogs-with-positive-comments/${idUser}`).then(res => res.json());
+            const contentEl = document.getElementById('content');
+            const {status, data, error} = await fetch(`/blogs-with-positive-comments/${idUser}`).then(res => res.json());
 
-            if (data.status === 'error') {
-                messageEl.innerText = data.data;
-            } else {
-                // if the message container contains any children, remove them
-                while (messageEl.firstChild) {
-                    messageEl.removeChild(messageEl.firstChild);
-                }
-
-                // populate the message container with all the posts of the user
-                // which have positive comments
-                data.data.forEach((element) => {
-                    console.log(element);
-                    const {date, subject, description} = element;
-                    const dateEl = document.createElement('p');
-                    const subjectEl = document.createElement('p');
-                    const descriptionEl = document.createElement('p');
-
-                    dateEl.innerText = 'Date: ' + date;
-                    subjectEl.innerText = 'Subject: ' + subject;
-                    descriptionEl.innerText = 'Description: ' + description;
-
-                    messageEl.appendChild(subjectEl);
-                    messageEl.appendChild(dateEl);
-                    messageEl.appendChild(descriptionEl);
-                    messageEl.appendChild(document.createElement('hr'));
-                });
+            // if fetch request returns an error, return out
+            if (status === 'error') {
+                messageEl.innerText = error;
+                return;
             }
-            // console.log(data);
-            
+
+            // if no data is returned (i.e. data array is empty) display error message and return out
+            if (!data.length) {
+                messageEl.innerText = "Has either not posted a blog or doesn't have a blog with positive rated comments.";
+                return;
+            }
+
+            // if the message container contains any children, remove them
+            while (contentEl.firstChild) {
+                contentEl.removeChild(contentEl.firstChild);
+            }
+
+            // remove text from message element
+            messageEl.innerText = '';
+
+            // populate the message container with all the posts of the user
+            // which have positive comments
+            data.forEach((element) => {
+                const {date, subject, description} = element;
+                const dateEl = document.createElement('p');
+                const subjectEl = document.createElement('p');
+                const descriptionEl = document.createElement('p');
+
+                dateEl.innerText = 'Date: ' + date;
+                subjectEl.innerText = 'Subject: ' + subject;
+                descriptionEl.innerText = 'Description: ' + description;
+
+                contentEl.appendChild(subjectEl);
+                contentEl.appendChild(dateEl);
+                contentEl.appendChild(descriptionEl);
+                contentEl.appendChild(document.createElement('hr'));
+            });
         });
     </script>
 </body>

@@ -67,7 +67,7 @@
                 const urlStr = `/users/${tagOneEl.value}/${tagTwoEl.value}`;
                 const {status, data} = await fetch(urlStr).then((res) => res.json());
 
-                console.log(data);
+                // console.log(data);
                 if (data == undefined || data == null) {
                     messageEl.innerText = `There are no users who have posted more than 2 blogs with the tags of '${tagOneEl.value}' and '${tagTwoEl.value}'`;
                     return;
@@ -77,24 +77,19 @@
                     messageEl.innerText = 'Uh-oh, an error has occurred! Try reloading the page.';
                 }
 
-                const usernameList = document.createElement('p');
-                contentEl.appendChild(usernameList);
-                let usernames = 'Users: ';
+                const ulEl = document.createElement('ul');
+                data.forEach((username) => {
+                    const liEl = document.createElement('li');
+                    liEl.innerText = username;
+                    ulEl.appendChild(liEl);
+                });
 
-                // for (key in data) {
-                //     const {username, posts} = data[key];
-                //     usernames += `${username} `;
+                const titleEl = document.createElement('h5');
+                titleEl.innerText = 'Usernames'
 
-                //     if (posts.length <= 0) {
-                //         continue;
-                //     }
+                contentEl.appendChild(titleEl);
+                contentEl.appendChild(ulEl);
 
-                //     // OPTIONAL:
-                //     // Was going to show all the posts alongisde the users but
-                //     // I realized I only need to show the users...
-                //     // Can still show posts, just do it after this comment if you want to
-                // }
-                // usernameList.innerText = usernames;
             });
         })();
     </script>

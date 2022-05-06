@@ -45,11 +45,22 @@
                 const subject = document.getElementById('subject').value.trim();
                 const description = document.getElementById('description').value.trim();
                 const tags = [];
+                const tagString = document.getElementById('tags').value;
+                let tagsEl;
+
+                if(tagString.includes(',')) {
+                    // comma separating the tags and sanitizing them for whitespaces then
+                    // putting them into the tags array
+                    tagsEl = tagString.trim().split(',');
+                    tagsEl.forEach((tag) => tags.push(tag.trim()));
+                } else {
+                    tags.push(tagString.trim());
+                }
                 
-                // comma separating the tags and sanitizing them for whitespaces then
-                // putting them into the tags array
-                const tagsEl = document.getElementById('tags').value.trim().split(',');
-                tagsEl.forEach((tag) => tags.push(tag.trim()));
+                // // comma separating the tags and sanitizing them for whitespaces then
+                // // putting them into the tags array
+                // tagsEl = document.getElementById('tags').value.trim().split(',');
+                // tagsEl.forEach((tag) => tags.push(tag.trim()));
     
                 const bodyData = { subject, description, tags, username };
                 const options = {
