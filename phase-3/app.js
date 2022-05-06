@@ -10,13 +10,14 @@ const port = 3000;
 const bodyParser = require('body-parser'); // parses body of http request
 const INITIALIZE_DATA_FILE = 'schema-and-data.sql';
 const mysql = require('mysql');
-const database = mysql.createConnection({
+const dbOptions = {
     host: '127.0.0.1',
     user: 'root',
     password: '',
     port: '3306',
     database: 'comp440'
-});
+};
+const database = mysql.createConnection(dbOptions);
 
 database.connect((error) => {
     if (error) {
@@ -798,12 +799,7 @@ app.post('/initialize', (req, res) => {
 
     // initialize database with new schema from phase 2
 
-    runner.connectionOptions({
-        host: '127.0.0.1',
-        user: 'user',
-        password: '',
-        port: '3306'
-    });
+    runner.connectionOptions(dbOptions);
 
     const sqlFile = __dirname + `/sql/${INITIALIZE_DATA_FILE}`;
     console.log(sqlFile);
