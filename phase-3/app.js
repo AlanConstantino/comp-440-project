@@ -773,7 +773,7 @@ app.post('/register', async (req, res) => {
         return;
     }
 
-    if (password === confirmPassword) {
+    if (password !== confirmPassword) {
         res.status(400).send({error: "Passwords do not match."});
         return;
     }
